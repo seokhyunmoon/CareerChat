@@ -1,2 +1,6 @@
 .DS_Store
 dry_run.py
+
+.env
+.env.*
+!.env.example
