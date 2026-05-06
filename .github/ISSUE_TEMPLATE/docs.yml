@@ -1,0 +1,57 @@
+name: "Docs"
+description: "문서 작성 및 수정 작업"
+title: "[Docs] "
+labels: ["docs"]
+body:
+  - type: textarea
+    id: purpose
+    attributes:
+      label: 목적
+      placeholder: 어떤 문서를 왜 작성하거나 수정하는지 작성하세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: todo
+    attributes:
+      label: 해야 할 일
+      placeholder: |
+        - [ ] 
+        - [ ] 
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: 완료 조건
+      placeholder: |
+        - [ ] 
+        - [ ] 
+    validations:
+      required: true
+
+  - type: input
+    id: assignee
+    attributes:
+      label: 담당자
+      placeholder: 예) 문석현
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 우선순위
+      options:
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+
+  - type: textarea
+    id: reference
+    attributes:
+      label: 참고 자료
+      placeholder: 관련 문서 링크나 참고 자료를 작성하세요.
