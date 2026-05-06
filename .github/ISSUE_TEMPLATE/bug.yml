@@ -1,0 +1,57 @@
+name: "Bug"
+description: "오류 수정 작업"
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: purpose
+    attributes:
+      label: 목적
+      placeholder: 어떤 문제를 해결하려는지 작성하세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: todo
+    attributes:
+      label: 해야 할 일
+      placeholder: |
+        - [ ] 
+        - [ ] 
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: 완료 조건
+      placeholder: |
+        - [ ] 
+        - [ ] 
+    validations:
+      required: true
+
+  - type: input
+    id: assignee
+    attributes:
+      label: 담당자
+      placeholder: 예) 문석현
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 우선순위
+      options:
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+
+  - type: textarea
+    id: reference
+    attributes:
+      label: 참고 자료
+      placeholder: 에러 로그, 재현 방법, 관련 링크를 작성하세요.
