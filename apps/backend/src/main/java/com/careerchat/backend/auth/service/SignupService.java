@@ -28,7 +28,7 @@ public class SignupService {
         }
 
         String passwordHash = passwordEncoder.encode(request.password());
-        User user = new User(request.email(), passwordHash, request.name(), null);
+        User user = new User(request.email(), passwordHash, request.name(), request.telephone());
         User savedUser = userRepository.save(user);
 
         return new SignupResponse(savedUser.getId(), savedUser.getEmail(), savedUser.getName());
