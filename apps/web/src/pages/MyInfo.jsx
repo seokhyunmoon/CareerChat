@@ -101,6 +101,17 @@ export default function MyInfo() {
     return true;
   };
 
+  const getNextEntryId = (type) => {
+    const listByType = {
+      edu: educationList,
+      career: careerList,
+      project: projectList,
+      optional: optionalList
+    };
+    const list = listByType[type] || [];
+    return Math.max(...list.map((item) => item.id), 0) + 1;
+  };
+
   const saveEntry = (e) => {
     e.preventDefault();
     
@@ -119,7 +130,7 @@ export default function MyInfo() {
 
     const entryData = {
       ...formData,
-      id: currentEntry ? currentEntry.id : Date.now(),
+      id: currentEntry ? currentEntry.id : getNextEntryId(modalType),
       title: modalType === 'edu' ? formData.school : 
              modalType === 'career' ? formData.company : 
              modalType === 'project' ? formData.projectName : 
