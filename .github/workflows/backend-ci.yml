@@ -17,13 +17,13 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: careerchat
+          POSTGRES_DB: careerchat_test
           POSTGRES_USER: careerchat
           POSTGRES_PASSWORD: careerchat
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U careerchat -d careerchat"
+          --health-cmd "pg_isready -U careerchat -d careerchat_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
