@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Analyze() {
   const navigate = useNavigate();
-  const [jobCards, setJobCards] = useState([Date.now()]);
+  const [jobCards, setJobCards] = useState([1]);
   const [isLoading, setIsLoading] = useState(false);
 
   const addJobCard = () => {
     if (jobCards.length >= 3) return;
-    setJobCards([...jobCards, Date.now()]);
+    const nextId = Math.max(...jobCards, 0) + 1;
+    setJobCards([...jobCards, nextId]);
   };
 
   const removeJobCard = (id) => {
