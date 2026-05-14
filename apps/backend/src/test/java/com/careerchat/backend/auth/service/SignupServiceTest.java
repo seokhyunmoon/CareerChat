@@ -34,7 +34,7 @@ class SignupServiceTest {
 
     @Test
     void signupSavesUserWithEncodedPassword() {
-        SignupRequest request = new SignupRequest("Moon", "user@example.com", "password123");
+        SignupRequest request = new SignupRequest("Moon", "user@example.com", "password123", "010-1234-5678");
         when(userRepository.existsByEmail("user@example.com")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -47,6 +47,7 @@ class SignupServiceTest {
         assertThat(savedUser.getEmail()).isEqualTo("user@example.com");
         assertThat(savedUser.getName()).isEqualTo("Moon");
         assertThat(savedUser.getPasswordHash()).isNotEqualTo("password123");
+        assertThat(savedUser.getTelephone()).isEqualTo("010-1234-5678");
         assertThat(passwordEncoder.matches("password123", savedUser.getPasswordHash())).isTrue();
 
         assertThat(response.email()).isEqualTo("user@example.com");
@@ -55,7 +56,7 @@ class SignupServiceTest {
 
     @Test
     void signupThrowsExceptionWhenEmailAlreadyExists() {
-        SignupRequest request = new SignupRequest("Moon", "user@example.com", "password123");
+        SignupRequest request = new SignupRequest("Moon", "user@example.com", "password123", null);
         when(userRepository.existsByEmail("user@example.com")).thenReturn(true);
 
         assertThatThrownBy(() -> signupService.signup(request))
