@@ -9,6 +9,7 @@ import com.careerchat.backend.auth.dto.LoginRequest;
 import com.careerchat.backend.auth.dto.LoginResponse;
 import com.careerchat.backend.global.exception.BusinessException;
 import com.careerchat.backend.global.exception.ErrorCode;
+import com.careerchat.backend.global.security.JwtTokenProvider;
 import com.careerchat.backend.user.domain.User;
 import com.careerchat.backend.user.repository.UserRepository;
 import java.util.Optional;
@@ -21,13 +22,15 @@ class LoginServiceTest {
 
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
+    private JwtTokenProvider jwtTokenProvider;
     private LoginService loginService;
 
     @BeforeEach
     void setUp() {
         userRepository = mock(UserRepository.class);
         passwordEncoder = new BCryptPasswordEncoder();
-        loginService = new LoginService(userRepository, passwordEncoder);
+        jwtTokenProvider = mock(JwtTokenProvider.class);
+        loginService = new LoginService(userRepository, passwordEncoder, jwtTokenProvider);
     }
 
     @Test
@@ -37,11 +40,13 @@ class LoginServiceTest {
 
         LoginRequest request = new LoginRequest("user@example.com", "password123");
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+        when(jwtTokenProvider.createAccessToken(user)).thenReturn("access-token");
 
         LoginResponse response = loginService.login(request);
 
         assertThat(response.email()).isEqualTo("user@example.com");
         assertThat(response.name()).isEqualTo("Moon");
+        assertThat(response.accessToken()).isEqualTo("access-token");
     }
 
     @Test
