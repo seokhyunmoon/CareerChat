@@ -15,6 +15,7 @@ import com.careerchat.backend.auth.dto.MeResponse;
 import com.careerchat.backend.auth.service.MeService;
 import com.careerchat.backend.global.config.SecurityConfig;
 import com.careerchat.backend.global.security.JwtTokenProvider;
+import com.careerchat.backend.global.security.RestAuthenticationEntryPoint;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -24,7 +25,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(AuthController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, RestAuthenticationEntryPoint.class})
 class AuthControllerTest {
 
     @Autowired
@@ -137,5 +138,26 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.data.email").value("user@example.com"))
                 .andExpect(jsonPath("$.data.name").value("Moon"))
                 .andExpect(jsonPath("$.message").value("Request succeeded."));
+    }
+
+    @Test
+    void meReturnsUnauthorizedWhenAuthorizationHeaderIsMissing() throws Exception {
+        mockMvc.perform(get("/auth/me"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
+                .andExpect(jsonPath("$.message").value("Authentication is required."));
+    }
+
+    @Test
+    void meReturnsUnauthorizedWhenAccessTokenIsInvalid() throws Exception {
+        when(jwtTokenProvider.validateAccessToken("invalid-token")).thenReturn(false);
+
+        mockMvc.perform(get("/auth/me")
+                        .header("Authorization", "Bearer invalid-token"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
+                .andExpect(jsonPath("$.message").value("Authentication is required."));
     }
 }
