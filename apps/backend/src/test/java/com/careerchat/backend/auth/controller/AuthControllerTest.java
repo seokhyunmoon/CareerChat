@@ -76,7 +76,7 @@ class AuthControllerTest {
     @Test
     void loginReturnsOkResponse() throws Exception {
         when(loginService.login(any()))
-                .thenReturn(new LoginResponse(1L, "user@example.com", "Moon"));
+                .thenReturn(new LoginResponse(1L, "user@example.com", "Moon", "access-token"));
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -91,6 +91,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.data.userId").value(1))
                 .andExpect(jsonPath("$.data.email").value("user@example.com"))
                 .andExpect(jsonPath("$.data.name").value("Moon"))
+                .andExpect(jsonPath("$.data.accessToken").value("access-token"))
                 .andExpect(jsonPath("$.message").value("Request succeeded."));
     }
 
