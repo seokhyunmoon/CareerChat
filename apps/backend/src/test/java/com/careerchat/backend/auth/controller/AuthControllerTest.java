@@ -8,6 +8,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.careerchat.backend.auth.dto.SignupResponse;
 import com.careerchat.backend.auth.service.SignupService;
+import com.careerchat.backend.auth.dto.LoginResponse;
+import com.careerchat.backend.auth.service.LoginService;
 import com.careerchat.backend.global.config.SecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +28,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private SignupService signupService;
+
+    @MockitoBean
+    private LoginService loginService;
 
     @Test
     void signupReturnsCreatedResponse() throws Exception {
@@ -64,6 +69,44 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.code").value("INVALID_INPUT"))
                 .andExpect(jsonPath("$.errors.name").exists())
+                .andExpect(jsonPath("$.errors.email").exists())
+                .andExpect(jsonPath("$.errors.password").exists());
+    }
+
+    @Test
+    void loginReturnsOkResponse() throws Exception {
+        when(loginService.login(any()))
+                .thenReturn(new LoginResponse(1L, "user@example.com", "Moon"));
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "email": "user@example.com",
+                              "password": "password123"
+                            }
+                            """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.userId").value(1))
+                .andExpect(jsonPath("$.data.email").value("user@example.com"))
+                .andExpect(jsonPath("$.data.name").value("Moon"))
+                .andExpect(jsonPath("$.message").value("Request succeeded."));
+    }
+
+    @Test
+    void loginReturnsBadRequestWhenRequestIsInvalid() throws Exception {
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "email": "invalid-email",
+                              "password": "short"
+                            }
+                            """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("INVALID_INPUT"))
                 .andExpect(jsonPath("$.errors.email").exists())
                 .andExpect(jsonPath("$.errors.password").exists());
     }
