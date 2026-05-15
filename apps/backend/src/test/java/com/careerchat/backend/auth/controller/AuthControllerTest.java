@@ -3,6 +3,7 @@ package com.careerchat.backend.auth.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -10,7 +11,10 @@ import com.careerchat.backend.auth.dto.SignupResponse;
 import com.careerchat.backend.auth.service.SignupService;
 import com.careerchat.backend.auth.dto.LoginResponse;
 import com.careerchat.backend.auth.service.LoginService;
+import com.careerchat.backend.auth.dto.MeResponse;
+import com.careerchat.backend.auth.service.MeService;
 import com.careerchat.backend.global.config.SecurityConfig;
+import com.careerchat.backend.global.security.JwtTokenProvider;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -31,6 +35,12 @@ class AuthControllerTest {
 
     @MockitoBean
     private LoginService loginService;
+
+    @MockitoBean
+    private MeService meService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
 
     @Test
     void signupReturnsCreatedResponse() throws Exception {
@@ -110,5 +120,22 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.code").value("INVALID_INPUT"))
                 .andExpect(jsonPath("$.errors.email").exists())
                 .andExpect(jsonPath("$.errors.password").exists());
+    }
+
+    @Test
+    void meReturnsCurrentUserResponse() throws Exception {
+        when(jwtTokenProvider.validateAccessToken("access-token")).thenReturn(true);
+        when(jwtTokenProvider.getUserId("access-token")).thenReturn(1L);
+        when(meService.getMe(1L))
+                .thenReturn(new MeResponse(1L, "user@example.com", "Moon"));
+
+        mockMvc.perform(get("/auth/me")
+                        .header("Authorization", "Bearer access-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.userId").value(1))
+                .andExpect(jsonPath("$.data.email").value("user@example.com"))
+                .andExpect(jsonPath("$.data.name").value("Moon"))
+                .andExpect(jsonPath("$.message").value("Request succeeded."));
     }
 }
