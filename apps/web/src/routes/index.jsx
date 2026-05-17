@@ -8,6 +8,7 @@ import MyInfo from '@/pages/MyInfo';
 import Analyze from '@/pages/Analyze';
 import History from '@/pages/History';
 import NotFound from '@/pages/NotFound';
+import RequireAuth from '@/routes/RequireAuth';
 
 export const router = createBrowserRouter([
   {
@@ -17,9 +18,9 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
       { path: 'result', element: <Result /> },
-      { path: 'myinfo', element: <MyInfo /> },
-      { path: 'analyze', element: <Analyze /> },
-      { path: 'history', element: <History /> },
+      { path: 'myinfo', element: <RequireAuth><MyInfo /></RequireAuth> },
+      { path: 'analyze', element: <RequireAuth><Analyze /></RequireAuth> },
+      { path: 'history', element: <RequireAuth><History /></RequireAuth> },
     ],
   },
   {
