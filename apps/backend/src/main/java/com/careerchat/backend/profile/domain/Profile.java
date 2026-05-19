@@ -52,4 +52,8 @@ public class Profile extends BaseTimeEntity {
     public ExperienceLevel getExperienceLevel() {
         return experienceLevel;
     }
+
+    public void updateExperienceLevel(ExperienceLevel experienceLevel) {
+        this.experienceLevel = Objects.requireNonNull(experienceLevel);
+    }
 }
