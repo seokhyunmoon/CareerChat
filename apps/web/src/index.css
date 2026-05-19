@@ -135,6 +135,12 @@ section { padding-top: 100px; }
 .btn-outline:hover { border-color: var(--green); color: var(--green); }
 .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); font-size: 13px; padding: 10px 20px; }
 .btn-ghost:hover { border-color: var(--border); color: var(--text); background: var(--bg3); }
+.btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
 
 /* ─── INPUT / TEXTAREA ───────────────────────────────── */
 .field { display: flex; flex-direction: column; gap: 6px; }
@@ -434,6 +440,25 @@ section { padding-top: 100px; }
 }
 .profile-section-title { font-family: var(--serif); font-size: 26px; letter-spacing: -0.5px; }
 .profile-required { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+.profile-message {
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--muted);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+  font-size: 13px;
+}
+.profile-message.success {
+  border-color: rgba(74,222,128,.28);
+  background: rgba(74,222,128,.08);
+  color: var(--green);
+}
+.profile-message.error {
+  border-color: rgba(248,113,113,.28);
+  background: rgba(248,113,113,.08);
+  color: var(--red);
+}
 .badge-required {
   font-size: 10px; font-family: var(--mono);
   background: rgba(74,222,128,.1); color: var(--green);
@@ -462,6 +487,7 @@ section { padding-top: 100px; }
   cursor: pointer; font-family: var(--sans); display: flex; align-items: center; gap: 4px;
 }
 .add-btn:hover { text-decoration: underline; }
+.add-btn:disabled { opacity: .55; cursor: not-allowed; text-decoration: none; }
 
 .entry-card {
   background: var(--bg3);
@@ -477,6 +503,14 @@ section { padding-top: 100px; }
 .entry-info { flex: 1; }
 .entry-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
 .entry-sub { font-size: 12px; color: var(--muted); }
+.entry-empty {
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  color: var(--muted);
+  font-size: 13px;
+  background: var(--bg3);
+}
 .entry-actions { display: flex; gap: 6px; }
 .icon-btn {
   width: 28px; height: 28px;
@@ -507,6 +541,7 @@ section { padding-top: 100px; }
 }
 .type-btn.selected { border-color: var(--green); color: var(--green); background: var(--green-dim); }
 .type-btn .type-icon { font-size: 24px; display: block; margin-bottom: 6px; }
+.type-btn:disabled { opacity: .55; cursor: not-allowed; }
 
 .save-bar {
   position: sticky;
@@ -521,6 +556,8 @@ section { padding-top: 100px; }
   gap: 12px;
 }
 .save-notice { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+.save-notice.success { color: var(--green); }
+.save-notice.error { color: var(--red); }
 
 /* =====================================================
    PAGE 3: DIAGNOSE
