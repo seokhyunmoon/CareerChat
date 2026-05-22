@@ -1,10 +1,20 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AnalysisLoadingOverlay from '@/features/diagnosis/AnalysisLoadingOverlay';
+
+const MOCK_ANALYSIS_DELAY_MS = 3600;
 
 export default function Analyze() {
   const navigate = useNavigate();
   const [jobCards, setJobCards] = useState([1]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitTimerRef = useRef(null);
+
+  useEffect(() => () => {
+    if (submitTimerRef.current) {
+      window.clearTimeout(submitTimerRef.current);
+    }
+  }, []);
 
   const addJobCard = () => {
     if (jobCards.length >= 3) return;
@@ -21,12 +31,11 @@ export default function Analyze() {
       alert('공고를 최소 1개 이상 입력해주세요.');
       return;
     }
-    setIsLoading(true);
-    // Simulate loading
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate('/result');
-    }, 3600);
+    setIsSubmitting(true);
+
+    submitTimerRef.current = window.setTimeout(() => {
+      navigate('/result/1001');
+    }, MOCK_ANALYSIS_DELAY_MS);
   };
 
   return (
@@ -39,6 +48,7 @@ export default function Analyze() {
               <div>
                 <div className="tag" style={{ marginBottom: '12px' }}>STEP 2 / 2</div>
                 <div className="jobs-title">채용공고 입력</div>
+                <div className="jobs-sub">비교하고 싶은 공고를 최대 3개까지 입력하세요.</div>
               </div>
               <div className="jobs-count" id="jobs-count">
                 {jobCards.length} / 3
@@ -55,7 +65,7 @@ export default function Analyze() {
                   </div>
                   <div className="field" style={{ marginBottom: '12px' }}>
                     <label>회사명 / 공고명</label>
-                    <input placeholder="예: 토스 Frontend Engineer" />
+                    <input placeholder="예: 토스 AI Engineer" />
                   </div>
                   <div className="field">
                     <label>채용공고 내용 또는 URL</label>
@@ -79,10 +89,15 @@ export default function Analyze() {
             <div className="run-btn-wrap">
               <div className="run-btn-info">
                 <strong>준비되셨나요?</strong>
-                내 정보와 입력한 공고를 AI가 분석합니다. 약 10–20초 소요됩니다.
+                내 정보와 입력한 공고를 AI가 분석합니다. 약 10-20초 소요됩니다.
               </div>
-              <button className="btn btn-primary" style={{ whiteSpace: 'nowrap' }} onClick={runAnalysis}>
-                진단 시작 →
+              <button
+                className="btn btn-primary"
+                style={{ whiteSpace: 'nowrap' }}
+                onClick={runAnalysis}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? '요청 중...' : '진단 시작 →'}
               </button>
             </div>
           </div>
@@ -105,7 +120,7 @@ export default function Analyze() {
                 <span className="chip">PostgreSQL</span>
                 <span className="chip">Next.js</span>
                 <span className="chip">Docker</span>
-                <span className="chip">FAISS / Qdrant</span>
+                <span className="chip">Vector Search</span>
               </div>
               <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '12px', color: 'var(--muted)' }}>내 정보 불러옴</span>
@@ -115,31 +130,13 @@ export default function Analyze() {
               </div>
             </div>
             <div className="diag-tip">
-              <strong>💡 TIP</strong>
+              <strong>TIP</strong>
               공고 전문을 붙여넣을수록 더 정확한 분석이 가능합니다. URL 입력도 지원합니다.
             </div>
           </div>
         </div>
       </div>
-
-      {/* LOADING OVERLAY */}
-      {isLoading && (
-        <div className="loading-overlay show">
-          <div className="loading-logo">CareerChat</div>
-          <div style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '8px', fontFamily: 'var(--mono)' }}>
-            AI 분석 중...
-          </div>
-          <div className="loading-bar-wrap">
-            <div className="loading-bar"></div>
-          </div>
-          <div className="loading-steps">
-            <div className="loading-step done">공고 핵심 요소 추출 중</div>
-            <div className="loading-step">프로필 데이터 매핑 중</div>
-            <div className="loading-step">적합도 점수 계산 중</div>
-            <div className="loading-step">보완 방향 생성 중</div>
-          </div>
-        </div>
-      )}
+      <AnalysisLoadingOverlay show={isSubmitting} />
     </>
   );
 }

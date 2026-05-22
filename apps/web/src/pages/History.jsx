@@ -1,32 +1,30 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { diagnosisStatusLabels, mockDiagnoses } from '@/features/diagnosis/mockDiagnosisData';
+
+function parseDateParts(createdAt) {
+  const [date] = createdAt.split(' ');
+  const [, month, day] = date.split('.');
+
+  return {
+    day,
+    month: `${month}월`,
+  };
+}
+
+function getHighestScore(diagnosis) {
+  if (diagnosis.status !== 'COMPLETED') return '-';
+
+  const highest = Math.max(...diagnosis.jobs.map((job) => job.fitScore));
+  return `${highest}점`;
+}
+
+function getHistoryScoreLabel(status) {
+  return status === 'COMPLETED' ? '최고 적합도' : '분석 상태';
+}
 
 export default function History() {
   const navigate = useNavigate();
-
-  const historyData = [
-    {
-      day: '22',
-      month: 'MAY \'25',
-      companies: '토스 · 카카오 · 네이버 클라우드',
-      jobs: 'Frontend Engineer · 백엔드 · DevOps',
-      score: '87점'
-    },
-    {
-      day: '10',
-      month: 'MAY \'25',
-      companies: '라인 · 쿠팡',
-      jobs: 'Frontend Developer · 풀스택',
-      score: '74점'
-    },
-    {
-      day: '28',
-      month: 'APR \'25',
-      companies: '당근마켓 · 뱅크샐러드 · 야놀자',
-      jobs: 'React 개발자 · Frontend · 앱 개발',
-      score: '69점'
-    }
-  ];
 
   return (
     <div id="page-history" className="page active">
@@ -36,24 +34,36 @@ export default function History() {
           <div className="history-sub">과거에 진행한 비교 진단 결과를 다시 확인하세요.</div>
         </div>
         <div className="history-list">
-          {historyData.map((item, idx) => (
-            <div key={idx} className="history-item" onClick={() => navigate('/result')}>
-              <div className="history-date">
-                <div className="h-day">{item.day}</div>
-                <div>{item.month}</div>
+          {mockDiagnoses.map((item) => {
+            const dateParts = parseDateParts(item.createdAt);
+
+            return (
+              <div
+                key={item.diagnosisId}
+                className="history-item"
+                onClick={() => navigate(`/result/${item.diagnosisId}`)}
+              >
+                <div className="history-date">
+                  <div className="h-day">{dateParts.day}</div>
+                  <div>{dateParts.month}</div>
+                </div>
+                <div className="history-divider"></div>
+                <div className="history-info">
+                  <div className="history-companies">{item.companies}</div>
+                  <div className="history-jobs">{item.jobsSummary}</div>
+                  <div className="history-id">{item.createdAt}</div>
+                </div>
+                <div className="history-meta">
+                  <div className={`history-status ${item.status.toLowerCase()}`}>
+                    {diagnosisStatusLabels[item.status]}
+                  </div>
+                  <div className="history-score">{getHighestScore(item)}</div>
+                  <div className="history-score-label">{getHistoryScoreLabel(item.status)}</div>
+                </div>
+                <div className="history-arrow">›</div>
               </div>
-              <div className="history-divider"></div>
-              <div className="history-info">
-                <div className="history-companies">{item.companies}</div>
-                <div className="history-jobs">{item.jobs}</div>
-              </div>
-              <div className="history-meta">
-                <div className="history-score">{item.score}</div>
-                <div className="history-score-label">최고 적합도</div>
-              </div>
-              <div className="history-arrow">›</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
