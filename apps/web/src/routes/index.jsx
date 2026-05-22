@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { Navigate, createBrowserRouter } from 'react-router-dom';
 import RootLayout from '@/layouts/RootLayout';
 import Home from '@/pages/Home';
 import Login from '@/pages/Login';
@@ -17,7 +17,8 @@ export const router = createBrowserRouter([
     errorElement: <NotFound />,
     children: [
       { index: true, element: <Home /> },
-      { path: 'result', element: <Result /> },
+      { path: 'result', element: <Navigate to="/result/1001" replace /> },
+      { path: 'result/:diagnosisId', element: <Result /> },
       { path: 'myinfo', element: <RequireAuth><MyInfo /></RequireAuth> },
       { path: 'analyze', element: <RequireAuth><Analyze /></RequireAuth> },
       { path: 'history', element: <RequireAuth><History /></RequireAuth> },
