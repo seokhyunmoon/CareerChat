@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.careerchat.backend.diagnosis.domain.DiagnosisStatus;
 import com.careerchat.backend.diagnosis.dto.DiagnosisCreateResponse;
+import com.careerchat.backend.diagnosis.dto.DiagnosisHistoryResponse;
 import com.careerchat.backend.diagnosis.dto.DiagnosisResultResponse;
 import com.careerchat.backend.diagnosis.service.DiagnosisService;
 import com.careerchat.backend.global.config.SecurityConfig;
@@ -267,6 +268,57 @@ class DiagnosisControllerTest {
                 .andExpect(jsonPath("$.message").value("Cannot access this diagnosis."));
     }
 
+    @Test
+    void getDiagnosesReturnsOkResponse() throws Exception {
+        when(jwtTokenProvider.validateAccessToken("access-token")).thenReturn(true);
+        when(jwtTokenProvider.getUserId("access-token")).thenReturn(1L);
+        when(diagnosisService.getDiagnoses(1L)).thenReturn(createHistoryResponse());
+
+        mockMvc.perform(get("/diagnoses")
+                        .header("Authorization", "Bearer access-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.diagnoses[0].diagnosisId").value(101))
+                .andExpect(jsonPath("$.data.diagnoses[0].status").value("PROCESSING"))
+                .andExpect(jsonPath("$.data.diagnoses[0].companies[0]").value("회사 C"))
+                .andExpect(jsonPath("$.data.diagnoses[0].jobCount").value(1))
+                .andExpect(jsonPath("$.data.diagnoses[0].topFitScore").doesNotExist())
+                .andExpect(jsonPath("$.data.diagnoses[1].diagnosisId").value(100))
+                .andExpect(jsonPath("$.data.diagnoses[1].status").value("COMPLETED"))
+                .andExpect(jsonPath("$.data.diagnoses[1].companies[0]").value("회사 A"))
+                .andExpect(jsonPath("$.data.diagnoses[1].jobsSummary").value("Backend Engineer · AI Engineer"))
+                .andExpect(jsonPath("$.data.diagnoses[1].topCompanyName").value("회사 B"))
+                .andExpect(jsonPath("$.data.diagnoses[1].topFitScore").value(86.5))
+                .andExpect(jsonPath("$.data.diagnoses[1].reportContent").doesNotExist())
+                .andExpect(jsonPath("$.data.diagnoses[1].matchDetails").doesNotExist())
+                .andExpect(jsonPath("$.data.diagnoses[1].aiTaskId").doesNotExist())
+                .andExpect(jsonPath("$.data.diagnoses[1].profileSnapshot").doesNotExist())
+                .andExpect(jsonPath("$.message").value("Request succeeded."));
+    }
+
+    @Test
+    void getDiagnosesReturnsUnauthorizedWhenAuthorizationHeaderIsMissing() throws Exception {
+        mockMvc.perform(get("/diagnoses"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
+                .andExpect(jsonPath("$.message").value("Authentication is required."));
+    }
+
+    @Test
+    void getDiagnosesReturnsEmptyHistory() throws Exception {
+        when(jwtTokenProvider.validateAccessToken("access-token")).thenReturn(true);
+        when(jwtTokenProvider.getUserId("access-token")).thenReturn(1L);
+        when(diagnosisService.getDiagnoses(1L)).thenReturn(new DiagnosisHistoryResponse(List.of()));
+
+        mockMvc.perform(get("/diagnoses")
+                        .header("Authorization", "Bearer access-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.diagnoses").isEmpty())
+                .andExpect(jsonPath("$.message").value("Request succeeded."));
+    }
+
     private DiagnosisCreateResponse createResponse() {
         return new DiagnosisCreateResponse(
                 1L,
@@ -278,6 +330,41 @@ class DiagnosisControllerTest {
                         "Backend Engineer"
                 ))
         );
+    }
+
+    private DiagnosisHistoryResponse createHistoryResponse() {
+        return new DiagnosisHistoryResponse(List.of(
+                new DiagnosisHistoryResponse.DiagnosisSummaryResponse(
+                        101L,
+                        DiagnosisStatus.PROCESSING,
+                        LocalDateTime.of(2026, 5, 23, 12, 10),
+                        LocalDateTime.of(2026, 5, 23, 12, 11),
+                        null,
+                        null,
+                        List.of("회사 C"),
+                        "Frontend Engineer",
+                        1,
+                        "회사 C",
+                        "Frontend Engineer",
+                        null,
+                        null
+                ),
+                new DiagnosisHistoryResponse.DiagnosisSummaryResponse(
+                        100L,
+                        DiagnosisStatus.COMPLETED,
+                        LocalDateTime.of(2026, 5, 23, 11, 58),
+                        LocalDateTime.of(2026, 5, 23, 11, 59),
+                        LocalDateTime.of(2026, 5, 23, 12, 0),
+                        null,
+                        List.of("회사 A", "회사 B"),
+                        "Backend Engineer · AI Engineer",
+                        2,
+                        "회사 B",
+                        "AI Engineer",
+                        new BigDecimal("86.50"),
+                        null
+                )
+        ));
     }
 
     private DiagnosisResultResponse createResultResponse() {

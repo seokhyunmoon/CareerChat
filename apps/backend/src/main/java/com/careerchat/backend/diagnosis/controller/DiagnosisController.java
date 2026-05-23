@@ -2,6 +2,7 @@ package com.careerchat.backend.diagnosis.controller;
 
 import com.careerchat.backend.diagnosis.dto.DiagnosisCreateRequest;
 import com.careerchat.backend.diagnosis.dto.DiagnosisCreateResponse;
+import com.careerchat.backend.diagnosis.dto.DiagnosisHistoryResponse;
 import com.careerchat.backend.diagnosis.dto.DiagnosisResultResponse;
 import com.careerchat.backend.diagnosis.service.DiagnosisService;
 import com.careerchat.backend.global.common.ApiResponse;
@@ -39,6 +40,15 @@ public class DiagnosisController {
             @PathVariable Long diagnosisId
     ) {
         DiagnosisResultResponse response = diagnosisService.getDiagnosis(authenticatedUser.userId(), diagnosisId);
+
+        return ApiResponse.success(response);
+    }
+
+    @GetMapping("/diagnoses")
+    public ApiResponse<DiagnosisHistoryResponse> getDiagnoses(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser
+    ) {
+        DiagnosisHistoryResponse response = diagnosisService.getDiagnoses(authenticatedUser.userId());
 
         return ApiResponse.success(response);
     }
