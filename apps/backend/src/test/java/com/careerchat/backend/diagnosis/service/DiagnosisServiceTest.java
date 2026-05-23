@@ -11,6 +11,8 @@ import static org.mockito.Mockito.when;
 import com.careerchat.backend.diagnosis.domain.Diagnosis;
 import com.careerchat.backend.diagnosis.domain.DiagnosisStatus;
 import com.careerchat.backend.diagnosis.domain.JDResult;
+import com.careerchat.backend.diagnosis.dto.AiDiagnosisCompleteRequest;
+import com.careerchat.backend.diagnosis.dto.AiDiagnosisFailRequest;
 import com.careerchat.backend.diagnosis.dto.DiagnosisCreateRequest;
 import com.careerchat.backend.diagnosis.dto.DiagnosisCreateResponse;
 import com.careerchat.backend.diagnosis.dto.DiagnosisHistoryResponse;
@@ -365,6 +367,126 @@ class DiagnosisServiceTest {
         verify(jdResultRepository, never()).findAllByDiagnosisOrderByDisplayOrderAsc(any());
     }
 
+    @Test
+    void completeDiagnosisFromAiUpdatesDiagnosisAndJdResults() {
+        User user = createUser(1L, "callback-owner@example.com");
+        Profile profile = createProfile(10L, user);
+        Diagnosis diagnosis = createDiagnosis(100L, profile);
+        diagnosis.startAnalysis(
+                "task-123",
+                "{\"experienceLevel\":\"NEW\"}",
+                LocalDateTime.of(2026, 5, 23, 12, 0)
+        );
+        JDResult jdResult = createJdResult(200L, diagnosis);
+        AiDiagnosisCompleteRequest request = createCompleteRequest(200L, "task-123");
+
+        when(diagnosisRepository.findById(100L)).thenReturn(Optional.of(diagnosis));
+        when(jdResultRepository.findByIdAndDiagnosis(200L, diagnosis)).thenReturn(Optional.of(jdResult));
+
+        diagnosisService.completeDiagnosisFromAi(100L, request);
+
+        assertThat(diagnosis.getStatus()).isEqualTo(DiagnosisStatus.COMPLETED);
+        assertThat(diagnosis.getReportSummary()).isEqualTo("요약");
+        assertThat(diagnosis.getReportContent()).isEqualTo("본문");
+        assertThat(diagnosis.getCompletedAt()).isEqualTo(LocalDateTime.of(2026, 5, 23, 12, 5));
+        assertThat(diagnosis.getModelName()).isEqualTo("gpt-4.1-mini");
+        assertThat(diagnosis.getPromptVersion()).isEqualTo("diagnosis-report-v1");
+        assertThat(diagnosis.getAnalysisMetadata()).contains("durationMs");
+        assertThat(jdResult.getRankOrder()).isEqualTo(1);
+        assertThat(jdResult.getFitScore()).isEqualByComparingTo("86.50");
+        assertThat(jdResult.getStrengthsSummary()).isEqualTo("강점");
+        assertThat(jdResult.getGapsSummary()).isEqualTo("부족");
+        assertThat(jdResult.getHighlightPoints()).isEqualTo("강조");
+        assertThat(jdResult.getMatchDetails()).contains("Spring");
+    }
+
+    @Test
+    void completeDiagnosisFromAiThrowsForbiddenWhenTaskIdDoesNotMatch() {
+        User user = createUser(1L, "callback-task-mismatch@example.com");
+        Profile profile = createProfile(10L, user);
+        Diagnosis diagnosis = createDiagnosis(100L, profile);
+        diagnosis.startAnalysis(
+                "task-123",
+                "{\"experienceLevel\":\"NEW\"}",
+                LocalDateTime.of(2026, 5, 23, 12, 0)
+        );
+        AiDiagnosisCompleteRequest request = createCompleteRequest(200L, "task-other");
+
+        when(diagnosisRepository.findById(100L)).thenReturn(Optional.of(diagnosis));
+
+        assertThatThrownBy(() -> diagnosisService.completeDiagnosisFromAi(100L, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Invalid AI task id.")
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.FORBIDDEN);
+
+        assertThat(diagnosis.getStatus()).isEqualTo(DiagnosisStatus.PROCESSING);
+        verify(jdResultRepository, never()).findByIdAndDiagnosis(any(Long.class), any(Diagnosis.class));
+    }
+
+    @Test
+    void completeDiagnosisFromAiThrowsResourceNotFoundWhenJdResultDoesNotExist() {
+        User user = createUser(1L, "callback-missing-jd@example.com");
+        Profile profile = createProfile(10L, user);
+        Diagnosis diagnosis = createDiagnosis(100L, profile);
+        diagnosis.startAnalysis(
+                "task-123",
+                "{\"experienceLevel\":\"NEW\"}",
+                LocalDateTime.of(2026, 5, 23, 12, 0)
+        );
+        AiDiagnosisCompleteRequest request = createCompleteRequest(999L, "task-123");
+
+        when(diagnosisRepository.findById(100L)).thenReturn(Optional.of(diagnosis));
+        when(jdResultRepository.findByIdAndDiagnosis(999L, diagnosis)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> diagnosisService.completeDiagnosisFromAi(100L, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("JD result not found.")
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.RESOURCE_NOT_FOUND);
+
+        assertThat(diagnosis.getStatus()).isEqualTo(DiagnosisStatus.PROCESSING);
+        assertThat(diagnosis.getReportSummary()).isNull();
+    }
+
+    @Test
+    void failDiagnosisFromAiUpdatesFailureDetails() {
+        User user = createUser(1L, "callback-fail@example.com");
+        Profile profile = createProfile(10L, user);
+        Diagnosis diagnosis = createDiagnosis(100L, profile);
+        diagnosis.startAnalysis(
+                "task-123",
+                "{\"experienceLevel\":\"NEW\"}",
+                LocalDateTime.of(2026, 5, 23, 12, 0)
+        );
+        AiDiagnosisFailRequest request = createFailRequest("task-123");
+
+        when(diagnosisRepository.findById(100L)).thenReturn(Optional.of(diagnosis));
+
+        diagnosisService.failDiagnosisFromAi(100L, request);
+
+        assertThat(diagnosis.getStatus()).isEqualTo(DiagnosisStatus.FAILED);
+        assertThat(diagnosis.getErrorCode()).isEqualTo("AI_TIMEOUT");
+        assertThat(diagnosis.getErrorMessage()).isEqualTo("분석 시간이 초과되었습니다.");
+        assertThat(diagnosis.getFailedStep()).isEqualTo("REPORT_GENERATION");
+        assertThat(diagnosis.getFailedAt()).isEqualTo(LocalDateTime.of(2026, 5, 23, 12, 5));
+        assertThat(diagnosis.getErrorDetails()).contains("retryable");
+        assertThat(diagnosis.getCompletedAt()).isEqualTo(LocalDateTime.of(2026, 5, 23, 12, 5));
+    }
+
+    @Test
+    void failDiagnosisFromAiThrowsResourceNotFoundWhenDiagnosisDoesNotExist() {
+        AiDiagnosisFailRequest request = createFailRequest("task-123");
+
+        when(diagnosisRepository.findById(100L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> diagnosisService.failDiagnosisFromAi(100L, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Diagnosis not found.")
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.RESOURCE_NOT_FOUND);
+    }
+
     private DiagnosisCreateRequest createRequest(int jobCount) {
         List<DiagnosisCreateRequest.JobRequest> jobs = java.util.stream.IntStream.rangeClosed(1, jobCount)
                 .mapToObj(index -> new DiagnosisCreateRequest.JobRequest(
@@ -405,5 +527,37 @@ class DiagnosisServiceTest {
         );
         ReflectionTestUtils.setField(jdResult, "id", id);
         return jdResult;
+    }
+
+    private AiDiagnosisCompleteRequest createCompleteRequest(Long jdId, String taskId) {
+        return new AiDiagnosisCompleteRequest(
+                taskId,
+                "요약",
+                "본문",
+                LocalDateTime.of(2026, 5, 23, 12, 5),
+                "gpt-4.1-mini",
+                "diagnosis-report-v1",
+                "{\"durationMs\":300000}",
+                List.of(new AiDiagnosisCompleteRequest.JobResultRequest(
+                        jdId,
+                        1,
+                        new BigDecimal("86.50"),
+                        "강점",
+                        "부족",
+                        "강조",
+                        "{\"requirements\":[{\"name\":\"Spring\",\"match\":\"HIGH\"}]}"
+                ))
+        );
+    }
+
+    private AiDiagnosisFailRequest createFailRequest(String taskId) {
+        return new AiDiagnosisFailRequest(
+                taskId,
+                "AI_TIMEOUT",
+                "분석 시간이 초과되었습니다.",
+                "REPORT_GENERATION",
+                LocalDateTime.of(2026, 5, 23, 12, 5),
+                "{\"retryable\":true}"
+        );
     }
 }

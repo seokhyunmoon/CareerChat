@@ -2,6 +2,8 @@ package com.careerchat.backend.diagnosis.service;
 
 import com.careerchat.backend.diagnosis.domain.Diagnosis;
 import com.careerchat.backend.diagnosis.domain.JDResult;
+import com.careerchat.backend.diagnosis.dto.AiDiagnosisCompleteRequest;
+import com.careerchat.backend.diagnosis.dto.AiDiagnosisFailRequest;
 import com.careerchat.backend.diagnosis.dto.DiagnosisCreateRequest;
 import com.careerchat.backend.diagnosis.dto.DiagnosisCreateResponse;
 import com.careerchat.backend.diagnosis.dto.DiagnosisHistoryResponse;
@@ -88,9 +90,77 @@ public class DiagnosisService {
         return new DiagnosisHistoryResponse(diagnoses);
     }
 
+    @Transactional
+    public void completeDiagnosisFromAi(Long diagnosisId, AiDiagnosisCompleteRequest request) {
+        Diagnosis diagnosis = getDiagnosisForCallback(diagnosisId);
+        validateAiTaskId(diagnosis, request.taskId());
+        List<JdResultUpdate> jdResultUpdates = request.jobs().stream()
+                .map(jobResult -> new JdResultUpdate(resolveJdResult(diagnosis, jobResult.jdId()), jobResult))
+                .toList();
+
+        diagnosis.updateAiMetadata(
+                request.modelName(),
+                request.promptVersion(),
+                request.analysisMetadata()
+        );
+        diagnosis.complete(
+                request.reportSummary(),
+                request.reportContent(),
+                request.completedAt()
+        );
+        jdResultUpdates.forEach(JdResultUpdate::apply);
+    }
+
+    @Transactional
+    public void failDiagnosisFromAi(Long diagnosisId, AiDiagnosisFailRequest request) {
+        Diagnosis diagnosis = getDiagnosisForCallback(diagnosisId);
+        validateAiTaskId(diagnosis, request.taskId());
+
+        diagnosis.fail(
+                request.errorCode(),
+                request.errorMessage(),
+                request.failedStep(),
+                request.errorDetails(),
+                request.failedAt()
+        );
+    }
+
     private User getCurrentUser(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED, "Authentication is required."));
+    }
+
+    private Diagnosis getDiagnosisForCallback(Long diagnosisId) {
+        return diagnosisRepository.findById(diagnosisId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "Diagnosis not found."));
+    }
+
+    private void validateAiTaskId(Diagnosis diagnosis, String taskId) {
+        if (!Objects.equals(diagnosis.getAiTaskId(), taskId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "Invalid AI task id.");
+        }
+    }
+
+    private JDResult resolveJdResult(Diagnosis diagnosis, Long jdId) {
+        return jdResultRepository.findByIdAndDiagnosis(jdId, diagnosis)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "JD result not found."));
+    }
+
+    private record JdResultUpdate(
+            JDResult jdResult,
+            AiDiagnosisCompleteRequest.JobResultRequest jobResult
+    ) {
+
+        private void apply() {
+            jdResult.updateAnalysisResult(
+                    jobResult.rankOrder(),
+                    jobResult.fitScore(),
+                    jobResult.strengthsSummary(),
+                    jobResult.gapsSummary(),
+                    jobResult.highlightPoints(),
+                    jobResult.matchDetails()
+            );
+        }
     }
 
     private void validateDiagnosisOwner(User user, Diagnosis diagnosis) {
