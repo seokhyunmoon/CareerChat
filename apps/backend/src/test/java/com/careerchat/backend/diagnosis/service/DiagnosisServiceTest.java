@@ -13,6 +13,7 @@ import com.careerchat.backend.diagnosis.domain.DiagnosisStatus;
 import com.careerchat.backend.diagnosis.domain.JDResult;
 import com.careerchat.backend.diagnosis.dto.DiagnosisCreateRequest;
 import com.careerchat.backend.diagnosis.dto.DiagnosisCreateResponse;
+import com.careerchat.backend.diagnosis.dto.DiagnosisHistoryResponse;
 import com.careerchat.backend.diagnosis.dto.DiagnosisResultResponse;
 import com.careerchat.backend.diagnosis.repository.DiagnosisRepository;
 import com.careerchat.backend.diagnosis.repository.JDResultRepository;
@@ -274,6 +275,93 @@ class DiagnosisServiceTest {
                 .isEqualTo(ErrorCode.UNAUTHORIZED);
 
         verify(diagnosisRepository, never()).findById(any());
+        verify(jdResultRepository, never()).findAllByDiagnosisOrderByDisplayOrderAsc(any());
+    }
+
+    @Test
+    void getDiagnosesReturnsDiagnosisHistory() {
+        User user = createUser(1L, "history-owner@example.com");
+        Profile profile = createProfile(10L, user);
+        Diagnosis completed = createDiagnosis(100L, profile);
+        completed.complete("요약", "본문", LocalDateTime.of(2026, 5, 23, 12, 0));
+        Diagnosis processing = createDiagnosis(101L, profile);
+        processing.startAnalysis(
+                "task-123",
+                "{\"experienceLevel\":\"NEW\"}",
+                LocalDateTime.of(2026, 5, 23, 12, 10)
+        );
+        JDResult first = createJdResult(200L, completed);
+        first.updateAnalysisResult(
+                2,
+                new BigDecimal("72.50"),
+                "강점 B",
+                "부족 B",
+                "강조 B"
+        );
+        JDResult top = createJdResult(201L, completed);
+        ReflectionTestUtils.setField(top, "companyName", "회사 B");
+        ReflectionTestUtils.setField(top, "position", "AI Engineer");
+        ReflectionTestUtils.setField(top, "displayOrder", 2);
+        top.updateAnalysisResult(
+                1,
+                new BigDecimal("86.50"),
+                "강점 A",
+                "부족 A",
+                "강조 A"
+        );
+        JDResult draft = createJdResult(202L, processing);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(profileRepository.findByUser(user)).thenReturn(Optional.of(profile));
+        when(diagnosisRepository.findAllByProfileOrderByCreatedAtDescIdDesc(profile))
+                .thenReturn(List.of(processing, completed));
+        when(jdResultRepository.findAllByDiagnosisOrderByDisplayOrderAsc(processing))
+                .thenReturn(List.of(draft));
+        when(jdResultRepository.findAllByDiagnosisOrderByDisplayOrderAsc(completed))
+                .thenReturn(List.of(first, top));
+
+        DiagnosisHistoryResponse response = diagnosisService.getDiagnoses(1L);
+
+        assertThat(response.diagnoses()).hasSize(2);
+        assertThat(response.diagnoses()).extracting(DiagnosisHistoryResponse.DiagnosisSummaryResponse::diagnosisId)
+                .containsExactly(101L, 100L);
+        assertThat(response.diagnoses().getFirst().status()).isEqualTo(DiagnosisStatus.PROCESSING);
+        assertThat(response.diagnoses().getFirst().jobCount()).isEqualTo(1);
+        assertThat(response.diagnoses().getFirst().topCompanyName()).isEqualTo("회사 A");
+        assertThat(response.diagnoses().getFirst().topFitScore()).isNull();
+        assertThat(response.diagnoses().get(1).companies()).containsExactly("회사 A", "회사 B");
+        assertThat(response.diagnoses().get(1).jobsSummary()).isEqualTo("Backend Engineer · AI Engineer");
+        assertThat(response.diagnoses().get(1).topCompanyName()).isEqualTo("회사 B");
+        assertThat(response.diagnoses().get(1).topPosition()).isEqualTo("AI Engineer");
+        assertThat(response.diagnoses().get(1).topFitScore()).isEqualByComparingTo("86.50");
+    }
+
+    @Test
+    void getDiagnosesReturnsEmptyHistoryWhenProfileDoesNotExist() {
+        User user = createUser(1L, "missing-history-profile@example.com");
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(profileRepository.findByUser(user)).thenReturn(Optional.empty());
+
+        DiagnosisHistoryResponse response = diagnosisService.getDiagnoses(1L);
+
+        assertThat(response.diagnoses()).isEmpty();
+        verify(diagnosisRepository, never()).findAllByProfileOrderByCreatedAtDescIdDesc(any());
+        verify(jdResultRepository, never()).findAllByDiagnosisOrderByDisplayOrderAsc(any());
+    }
+
+    @Test
+    void getDiagnosesThrowsUnauthorizedWhenUserDoesNotExist() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> diagnosisService.getDiagnoses(1L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Authentication is required.")
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.UNAUTHORIZED);
+
+        verify(profileRepository, never()).findByUser(any());
+        verify(diagnosisRepository, never()).findAllByProfileOrderByCreatedAtDescIdDesc(any());
         verify(jdResultRepository, never()).findAllByDiagnosisOrderByDisplayOrderAsc(any());
     }
 

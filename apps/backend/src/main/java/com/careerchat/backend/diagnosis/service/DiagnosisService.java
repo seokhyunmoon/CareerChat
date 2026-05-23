@@ -4,6 +4,7 @@ import com.careerchat.backend.diagnosis.domain.Diagnosis;
 import com.careerchat.backend.diagnosis.domain.JDResult;
 import com.careerchat.backend.diagnosis.dto.DiagnosisCreateRequest;
 import com.careerchat.backend.diagnosis.dto.DiagnosisCreateResponse;
+import com.careerchat.backend.diagnosis.dto.DiagnosisHistoryResponse;
 import com.careerchat.backend.diagnosis.dto.DiagnosisResultResponse;
 import com.careerchat.backend.diagnosis.repository.DiagnosisRepository;
 import com.careerchat.backend.diagnosis.repository.JDResultRepository;
@@ -63,6 +64,28 @@ public class DiagnosisService {
         List<JDResult> jdResults = jdResultRepository.findAllByDiagnosisOrderByDisplayOrderAsc(diagnosis);
 
         return DiagnosisResultResponse.of(diagnosis, jdResults);
+    }
+
+    @Transactional(readOnly = true)
+    public DiagnosisHistoryResponse getDiagnoses(Long userId) {
+        User user = getCurrentUser(userId);
+        Profile profile = profileRepository.findByUser(user)
+                .orElse(null);
+
+        if (profile == null) {
+            return new DiagnosisHistoryResponse(List.of());
+        }
+
+        List<DiagnosisHistoryResponse.DiagnosisSummaryResponse> diagnoses = diagnosisRepository
+                .findAllByProfileOrderByCreatedAtDescIdDesc(profile)
+                .stream()
+                .map(diagnosis -> DiagnosisHistoryResponse.DiagnosisSummaryResponse.of(
+                        diagnosis,
+                        jdResultRepository.findAllByDiagnosisOrderByDisplayOrderAsc(diagnosis)
+                ))
+                .toList();
+
+        return new DiagnosisHistoryResponse(diagnoses);
     }
 
     private User getCurrentUser(Long userId) {
