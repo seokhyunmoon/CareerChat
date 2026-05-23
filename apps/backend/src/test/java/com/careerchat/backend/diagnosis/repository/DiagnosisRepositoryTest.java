@@ -91,6 +91,49 @@ class DiagnosisRepositoryTest {
     }
 
     @Test
+    void savesDiagnosisAiMetadataAndFailureDetails() {
+        Profile profile = createProfile("diagnosis-ai-metadata@example.com");
+        Diagnosis diagnosis = new Diagnosis(profile);
+        LocalDateTime analysisStartedAt = LocalDateTime.now();
+        LocalDateTime failedAt = analysisStartedAt.plusSeconds(30);
+
+        diagnosis.startAnalysis(
+                "task-123",
+                "{\"experienceLevel\":\"NEW\"}",
+                analysisStartedAt
+        );
+        diagnosis.updateAiMetadata(
+                "gpt-4.1-mini",
+                "diagnosis-report-v1",
+                "{\"durationMs\":30000}"
+        );
+        diagnosis.fail(
+                "AI_TIMEOUT",
+                "분석 시간이 초과되었습니다.",
+                "REPORT_GENERATION",
+                "{\"retryable\":true}",
+                failedAt
+        );
+
+        Diagnosis saved = diagnosisRepository.saveAndFlush(diagnosis);
+        Diagnosis found = diagnosisRepository.findById(saved.getId()).orElseThrow();
+
+        assertThat(found.getStatus()).isEqualTo(DiagnosisStatus.FAILED);
+        assertThat(found.getAiTaskId()).isEqualTo("task-123");
+        assertThat(found.getProfileSnapshot()).contains("experienceLevel", "NEW");
+        assertThat(found.getAnalysisStartedAt()).isEqualTo(analysisStartedAt);
+        assertThat(found.getModelName()).isEqualTo("gpt-4.1-mini");
+        assertThat(found.getPromptVersion()).isEqualTo("diagnosis-report-v1");
+        assertThat(found.getAnalysisMetadata()).contains("durationMs", "30000");
+        assertThat(found.getErrorCode()).isEqualTo("AI_TIMEOUT");
+        assertThat(found.getErrorMessage()).isEqualTo("분석 시간이 초과되었습니다.");
+        assertThat(found.getFailedStep()).isEqualTo("REPORT_GENERATION");
+        assertThat(found.getFailedAt()).isEqualTo(failedAt);
+        assertThat(found.getErrorDetails()).contains("retryable");
+        assertThat(found.getCompletedAt()).isEqualTo(failedAt);
+    }
+
+    @Test
     void savesAndFindsJdResultsByDisplayOrder() {
         Profile profile = createProfile("jd-results@example.com");
         Diagnosis diagnosis = diagnosisRepository.save(new Diagnosis(profile));
@@ -114,7 +157,8 @@ class DiagnosisRepositoryTest {
                 new BigDecimal("85.50"),
                 "강점",
                 "부족",
-                "강조"
+                "강조",
+                "{\"requirements\":[{\"name\":\"Spring\",\"match\":\"HIGH\"}]}"
         );
         jdResultRepository.flush();
 
@@ -126,6 +170,8 @@ class DiagnosisRepositoryTest {
         assertThat(results.get(0).getStrengthsSummary()).isEqualTo("강점");
         assertThat(results.get(0).getGapsSummary()).isEqualTo("부족");
         assertThat(results.get(0).getHighlightPoints()).isEqualTo("강조");
+        assertThat(results.get(0).getMatchDetails()).contains("\"requirements\"");
+        assertThat(results.get(0).getMatchDetails()).contains("\"Spring\"");
     }
 
     @Test

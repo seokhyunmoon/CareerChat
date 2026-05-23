@@ -14,6 +14,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
 import java.util.Objects;
+import org.hibernate.annotations.ColumnTransformer;
 
 @Entity
 @Table(
@@ -70,6 +71,10 @@ public class JDResult extends BaseTimeEntity {
 
     @Column(name = "highlight_points", columnDefinition = "TEXT")
     private String highlightPoints;
+
+    @Column(name = "match_details", columnDefinition = "jsonb")
+    @ColumnTransformer(write = "?::jsonb")
+    private String matchDetails;
 
     protected JDResult() {
     }
@@ -132,6 +137,10 @@ public class JDResult extends BaseTimeEntity {
         return highlightPoints;
     }
 
+    public String getMatchDetails() {
+        return matchDetails;
+    }
+
     public void updateAnalysisResult(
             Integer rankOrder,
             BigDecimal fitScore,
@@ -139,10 +148,29 @@ public class JDResult extends BaseTimeEntity {
             String gapsSummary,
             String highlightPoints
     ) {
+        updateAnalysisResult(
+                rankOrder,
+                fitScore,
+                strengthsSummary,
+                gapsSummary,
+                highlightPoints,
+                null
+        );
+    }
+
+    public void updateAnalysisResult(
+            Integer rankOrder,
+            BigDecimal fitScore,
+            String strengthsSummary,
+            String gapsSummary,
+            String highlightPoints,
+            String matchDetails
+    ) {
         this.rankOrder = rankOrder;
         this.fitScore = fitScore;
         this.strengthsSummary = strengthsSummary;
         this.gapsSummary = gapsSummary;
         this.highlightPoints = highlightPoints;
+        this.matchDetails = matchDetails;
     }
 }
