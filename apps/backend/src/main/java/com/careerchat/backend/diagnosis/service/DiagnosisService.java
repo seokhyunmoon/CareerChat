@@ -4,6 +4,7 @@ import com.careerchat.backend.diagnosis.domain.Diagnosis;
 import com.careerchat.backend.diagnosis.domain.JDResult;
 import com.careerchat.backend.diagnosis.dto.DiagnosisCreateRequest;
 import com.careerchat.backend.diagnosis.dto.DiagnosisCreateResponse;
+import com.careerchat.backend.diagnosis.dto.DiagnosisResultResponse;
 import com.careerchat.backend.diagnosis.repository.DiagnosisRepository;
 import com.careerchat.backend.diagnosis.repository.JDResultRepository;
 import com.careerchat.backend.global.exception.BusinessException;
@@ -13,6 +14,7 @@ import com.careerchat.backend.profile.repository.ProfileRepository;
 import com.careerchat.backend.user.domain.User;
 import com.careerchat.backend.user.repository.UserRepository;
 import java.util.List;
+import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,9 +52,29 @@ public class DiagnosisService {
         return DiagnosisCreateResponse.of(diagnosis, jdResults);
     }
 
+    @Transactional(readOnly = true)
+    public DiagnosisResultResponse getDiagnosis(Long userId, Long diagnosisId) {
+        User user = getCurrentUser(userId);
+        Diagnosis diagnosis = diagnosisRepository.findById(diagnosisId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "Diagnosis not found."));
+
+        validateDiagnosisOwner(user, diagnosis);
+
+        List<JDResult> jdResults = jdResultRepository.findAllByDiagnosisOrderByDisplayOrderAsc(diagnosis);
+
+        return DiagnosisResultResponse.of(diagnosis, jdResults);
+    }
+
     private User getCurrentUser(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED, "Authentication is required."));
+    }
+
+    private void validateDiagnosisOwner(User user, Diagnosis diagnosis) {
+        Long ownerId = diagnosis.getProfile().getUser().getId();
+        if (!Objects.equals(user.getId(), ownerId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "Cannot access this diagnosis.");
+        }
     }
 
     private void validateJobsCount(List<DiagnosisCreateRequest.JobRequest> jobs) {
