@@ -3,18 +3,22 @@ package com.careerchat.backend.diagnosis.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.careerchat.backend.diagnosis.domain.DiagnosisStatus;
 import com.careerchat.backend.diagnosis.dto.DiagnosisCreateResponse;
+import com.careerchat.backend.diagnosis.dto.DiagnosisResultResponse;
 import com.careerchat.backend.diagnosis.service.DiagnosisService;
 import com.careerchat.backend.global.config.SecurityConfig;
 import com.careerchat.backend.global.exception.BusinessException;
 import com.careerchat.backend.global.exception.ErrorCode;
 import com.careerchat.backend.global.security.JwtTokenProvider;
 import com.careerchat.backend.global.security.RestAuthenticationEntryPoint;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -200,6 +204,69 @@ class DiagnosisControllerTest {
                 .andExpect(jsonPath("$.errors").exists());
     }
 
+    @Test
+    void getDiagnosisReturnsOkResponse() throws Exception {
+        when(jwtTokenProvider.validateAccessToken("access-token")).thenReturn(true);
+        when(jwtTokenProvider.getUserId("access-token")).thenReturn(1L);
+        when(diagnosisService.getDiagnosis(1L, 100L)).thenReturn(createResultResponse());
+
+        mockMvc.perform(get("/diagnoses/100")
+                        .header("Authorization", "Bearer access-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.diagnosisId").value(100))
+                .andExpect(jsonPath("$.data.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.data.reportSummary").value("요약"))
+                .andExpect(jsonPath("$.data.jobs[0].jdId").value(200))
+                .andExpect(jsonPath("$.data.jobs[0].rankOrder").value(1))
+                .andExpect(jsonPath("$.data.jobs[0].fitScore").value(86.5))
+                .andExpect(jsonPath("$.data.jobs[0].matchDetails.requirements[0].name").value("Spring"))
+                .andExpect(jsonPath("$.data.aiTaskId").doesNotExist())
+                .andExpect(jsonPath("$.data.profileSnapshot").doesNotExist())
+                .andExpect(jsonPath("$.data.analysisMetadata").doesNotExist())
+                .andExpect(jsonPath("$.data.errorDetails").doesNotExist())
+                .andExpect(jsonPath("$.message").value("Request succeeded."));
+    }
+
+    @Test
+    void getDiagnosisReturnsUnauthorizedWhenAuthorizationHeaderIsMissing() throws Exception {
+        mockMvc.perform(get("/diagnoses/100"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
+                .andExpect(jsonPath("$.message").value("Authentication is required."));
+    }
+
+    @Test
+    void getDiagnosisReturnsNotFoundWhenDiagnosisDoesNotExist() throws Exception {
+        when(jwtTokenProvider.validateAccessToken("access-token")).thenReturn(true);
+        when(jwtTokenProvider.getUserId("access-token")).thenReturn(1L);
+        when(diagnosisService.getDiagnosis(1L, 100L))
+                .thenThrow(new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "Diagnosis not found."));
+
+        mockMvc.perform(get("/diagnoses/100")
+                        .header("Authorization", "Bearer access-token"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"))
+                .andExpect(jsonPath("$.message").value("Diagnosis not found."));
+    }
+
+    @Test
+    void getDiagnosisReturnsForbiddenWhenDiagnosisBelongsToOtherUser() throws Exception {
+        when(jwtTokenProvider.validateAccessToken("access-token")).thenReturn(true);
+        when(jwtTokenProvider.getUserId("access-token")).thenReturn(1L);
+        when(diagnosisService.getDiagnosis(1L, 100L))
+                .thenThrow(new BusinessException(ErrorCode.FORBIDDEN, "Cannot access this diagnosis."));
+
+        mockMvc.perform(get("/diagnoses/100")
+                        .header("Authorization", "Bearer access-token"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"))
+                .andExpect(jsonPath("$.message").value("Cannot access this diagnosis."));
+    }
+
     private DiagnosisCreateResponse createResponse() {
         return new DiagnosisCreateResponse(
                 1L,
@@ -209,6 +276,33 @@ class DiagnosisControllerTest {
                         1,
                         "회사 A",
                         "Backend Engineer"
+                ))
+        );
+    }
+
+    private DiagnosisResultResponse createResultResponse() {
+        return new DiagnosisResultResponse(
+                100L,
+                DiagnosisStatus.COMPLETED,
+                LocalDateTime.of(2026, 5, 23, 11, 58),
+                LocalDateTime.of(2026, 5, 23, 11, 59),
+                LocalDateTime.of(2026, 5, 23, 12, 0),
+                null,
+                "요약",
+                "본문",
+                null,
+                null,
+                List.of(new DiagnosisResultResponse.JobResultResponse(
+                        200L,
+                        1,
+                        1,
+                        "회사 A",
+                        "Backend Engineer",
+                        new BigDecimal("86.50"),
+                        "강점",
+                        "부족",
+                        "강조",
+                        "{\"requirements\":[{\"name\":\"Spring\",\"match\":\"HIGH\"}]}"
                 ))
         );
     }
