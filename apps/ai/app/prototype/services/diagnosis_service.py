@@ -3,17 +3,17 @@ from __future__ import annotations
 from collections import Counter
 from typing import Any
 
-from app.clients.embedding_client import get_embeddings
-from app.clients.llm_client import get_llm
-from app.services.job_structuring_service import (
+from app.prototype.clients.embedding_client import get_embeddings
+from app.prototype.clients.llm_client import get_llm
+from app.prototype.services.job_structuring_service import (
     normalize_requirement_tags,
     structure_job_posting,
 )
-from app.services.matching_service import match_requirements
-from app.services.profile_document_service import build_profile_documents
-from app.services.report_service import build_report_input, generate_report
-from app.services.retrieval_service import create_retriever, selective_split_profile_docs
-from app.services.scoring_service import compute_fit_score
+from app.prototype.services.matching_service import match_requirements
+from app.prototype.services.profile_document_service import build_profile_documents
+from app.prototype.services.report_service import build_report_input, generate_report
+from app.prototype.services.retrieval_service import create_retriever, selective_split_profile_docs
+from app.prototype.services.scoring_service import compute_fit_score
 
 
 def analyze_jobs(

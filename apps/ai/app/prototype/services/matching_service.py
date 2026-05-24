@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.schemas.job import StructuredRequirement
-from app.schemas.match import RequirementMatch
+from app.prototype.schemas.job import StructuredRequirement
+from app.prototype.schemas.match import RequirementMatch
 
 
 def match_requirement(

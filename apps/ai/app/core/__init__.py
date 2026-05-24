@@ -1,1 +1,1 @@
-"""Core configuration and prompt helpers."""
+"""Core configuration, constants, and errors for the AI backend."""

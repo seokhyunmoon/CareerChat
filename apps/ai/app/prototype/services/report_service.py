@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.schemas.job import StructuredJobPosting
-from app.schemas.match import RequirementMatch
+from app.prototype.schemas.job import StructuredJobPosting
+from app.prototype.schemas.match import RequirementMatch
 
 
 def build_report_input(

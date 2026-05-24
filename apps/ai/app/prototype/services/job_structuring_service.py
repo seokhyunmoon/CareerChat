@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from app.schemas.job import StructuredJobPosting
+from app.prototype.schemas.job import StructuredJobPosting
 
 
 def structure_job_posting(job_posting: dict[str, Any], llm: Any) -> StructuredJobPosting:

@@ -1,0 +1,36 @@
+from __future__ import annotations
+
+from enum import Enum
+
+
+class PipelineStep(str, Enum):
+    INPUT_VALIDATION = "INPUT_VALIDATION"
+    PROFILE_NORMALIZATION = "PROFILE_NORMALIZATION"
+    PROFILE_INDEXING = "PROFILE_INDEXING"
+    JOB_STRUCTURING = "JOB_STRUCTURING"
+    EVIDENCE_RETRIEVAL = "EVIDENCE_RETRIEVAL"
+    REQUIREMENT_MATCHING = "REQUIREMENT_MATCHING"
+    JOB_SCORING = "JOB_SCORING"
+    CROSS_JOB_COMPARISON = "CROSS_JOB_COMPARISON"
+    REPORT_GENERATION = "REPORT_GENERATION"
+    RESULT_PACKAGING = "RESULT_PACKAGING"
+    SPRING_CALLBACK = "SPRING_CALLBACK"
+
+
+ORDERED_PIPELINE_STEPS: tuple[PipelineStep, ...] = (
+    PipelineStep.INPUT_VALIDATION,
+    PipelineStep.PROFILE_NORMALIZATION,
+    PipelineStep.PROFILE_INDEXING,
+    PipelineStep.JOB_STRUCTURING,
+    PipelineStep.EVIDENCE_RETRIEVAL,
+    PipelineStep.REQUIREMENT_MATCHING,
+    PipelineStep.JOB_SCORING,
+    PipelineStep.CROSS_JOB_COMPARISON,
+    PipelineStep.REPORT_GENERATION,
+    PipelineStep.RESULT_PACKAGING,
+    PipelineStep.SPRING_CALLBACK,
+)
+
+
+def pipeline_step_values() -> tuple[str, ...]:
+    return tuple(step.value for step in ORDERED_PIPELINE_STEPS)
