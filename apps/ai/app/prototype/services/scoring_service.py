@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.schemas.match import RequirementMatch
+from app.prototype.schemas.match import RequirementMatch
 
 
 def compute_fit_score(matches: list[RequirementMatch]) -> dict[str, float]:

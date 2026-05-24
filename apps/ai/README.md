@@ -1,13 +1,18 @@
 # CareerChat AI
 
-This folder contains the Python version of the original Colab pipeline in `Final_colabdownload_1.py`.
+This folder contains the AI backend foundation and the prototype analysis pipeline.
+
+The prototype code is kept under `app/prototype` as reference material. Production
+AI backend work should use the foundation packages under `app/api`, `app/workers`,
+`app/pipeline`, `app/prompts`, `app/retrieval`, `app/llm`, `app/callbacks`,
+`app/core`, and `app/schemas`.
 
 ## Setup
 
-```powershell
+```bash
 cd apps/ai
 uv sync
-if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+cp -n .env.example .env
 ```
 
 Then edit `.env` and set:
@@ -20,14 +25,14 @@ GROQ_API_KEY=your_real_groq_api_key
 
 Analyze the bundled sample data:
 
-```powershell
-uv run python -m app.samples.run_sample
+```bash
+uv run python -m app.prototype.samples.run_sample
 ```
 
 Run only one sample job posting to reduce LLM calls:
 
-```powershell
-uv run python -m app.samples.run_sample --max-jobs 1
+```bash
+uv run python -m app.prototype.samples.run_sample --max-jobs 1
 ```
 
 ## Pipeline

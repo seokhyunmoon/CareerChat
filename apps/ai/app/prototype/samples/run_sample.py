@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import argparse
 
-from app.samples.sample_data import get_sample_payload
-from app.services.diagnosis_service import analyze_jobs
+from app.prototype.samples.sample_data import get_sample_payload
+from app.prototype.services.diagnosis_service import analyze_jobs
 
 
 def main() -> None:
