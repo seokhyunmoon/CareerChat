@@ -16,20 +16,20 @@ class CompleteCallbackJobResult(BaseModel):
 
 
 class CompleteCallbackPayload(BaseModel):
-    taskId: str
-    reportSummary: str
-    reportContent: str
+    taskId: str = Field(min_length=1)
+    reportSummary: str = Field(min_length=1)
+    reportContent: str = Field(min_length=1)
     completedAt: datetime
-    modelName: str | None = None
-    promptVersion: str | None = None
+    modelName: str | None = Field(default=None, max_length=100)
+    promptVersion: str | None = Field(default=None, max_length=100)
     analysisMetadata: str | None = None
     jobs: list[CompleteCallbackJobResult]
 
 
 class FailCallbackPayload(BaseModel):
-    taskId: str
-    errorCode: str | None = None
-    errorMessage: str
-    failedStep: str | None = None
+    taskId: str = Field(min_length=1)
+    errorCode: str | None = Field(default=None, max_length=100)
+    errorMessage: str = Field(min_length=1)
+    failedStep: str | None = Field(default=None, max_length=100)
     failedAt: datetime
     errorDetails: str | None = None

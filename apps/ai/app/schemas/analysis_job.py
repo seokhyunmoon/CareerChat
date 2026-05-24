@@ -19,8 +19,8 @@ class AnalysisJobPosting(BaseModel):
 
     jdId: int
     displayOrder: int = Field(ge=1, le=3)
-    companyName: str = Field(min_length=1, max_length=100)
-    position: str = Field(min_length=1, max_length=100)
+    companyName: str = Field(min_length=1, max_length=255)
+    position: str | None = Field(default=None, max_length=255)
     content: str = Field(min_length=1)
 
 
