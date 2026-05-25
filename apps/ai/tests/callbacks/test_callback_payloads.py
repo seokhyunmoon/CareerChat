@@ -8,6 +8,7 @@ from app.callbacks.payloads import (
 )
 from app.core.error_codes import AnalysisErrorCode
 from app.pipeline.context import AnalysisPipelineResult
+from app.pipeline.reporting import AnalysisReportGenerator
 from app.schemas.metadata import AnalysisMetadata
 from app.workers.payloads import AnalysisTaskPayload
 from tests.workers.test_payloads import build_analysis_job_request
@@ -26,10 +27,14 @@ def build_task_payload() -> AnalysisTaskPayload:
 
 
 def build_pipeline_result(task_payload: AnalysisTaskPayload) -> AnalysisPipelineResult:
+    context = task_payload.to_pipeline_context()
+    report_package = AnalysisReportGenerator().generate_report(context)
+
     return AnalysisPipelineResult(
         diagnosisId=task_payload.diagnosisId,
         taskId=task_payload.taskId,
         metadata=task_payload.metadata,
+        reportPackage=report_package,
     )
 
 
