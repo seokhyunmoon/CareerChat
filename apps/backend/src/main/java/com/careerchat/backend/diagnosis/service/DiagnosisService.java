@@ -1,5 +1,6 @@
 package com.careerchat.backend.diagnosis.service;
 
+import com.careerchat.backend.ai.service.AiAnalysisJobStarter;
 import com.careerchat.backend.diagnosis.domain.Diagnosis;
 import com.careerchat.backend.diagnosis.domain.JDResult;
 import com.careerchat.backend.diagnosis.dto.AiDiagnosisCompleteRequest;
@@ -28,17 +29,20 @@ public class DiagnosisService {
     private final ProfileRepository profileRepository;
     private final DiagnosisRepository diagnosisRepository;
     private final JDResultRepository jdResultRepository;
+    private final AiAnalysisJobStarter aiAnalysisJobStarter;
 
     public DiagnosisService(
             UserRepository userRepository,
             ProfileRepository profileRepository,
             DiagnosisRepository diagnosisRepository,
-            JDResultRepository jdResultRepository
+            JDResultRepository jdResultRepository,
+            AiAnalysisJobStarter aiAnalysisJobStarter
     ) {
         this.userRepository = userRepository;
         this.profileRepository = profileRepository;
         this.diagnosisRepository = diagnosisRepository;
         this.jdResultRepository = jdResultRepository;
+        this.aiAnalysisJobStarter = aiAnalysisJobStarter;
     }
 
     @Transactional
@@ -51,6 +55,7 @@ public class DiagnosisService {
 
         Diagnosis diagnosis = diagnosisRepository.save(new Diagnosis(profile));
         List<JDResult> jdResults = saveJdResults(diagnosis, request.jobs());
+        aiAnalysisJobStarter.start(diagnosis, jdResults);
 
         return DiagnosisCreateResponse.of(diagnosis, jdResults);
     }

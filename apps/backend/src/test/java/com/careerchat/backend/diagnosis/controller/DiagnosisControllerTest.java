@@ -65,7 +65,7 @@ class DiagnosisControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.diagnosisId").value(1))
-                .andExpect(jsonPath("$.data.status").value("PENDING"))
+                .andExpect(jsonPath("$.data.status").value("PROCESSING"))
                 .andExpect(jsonPath("$.data.jobs[0].jdId").value(10))
                 .andExpect(jsonPath("$.data.jobs[0].displayOrder").value(1))
                 .andExpect(jsonPath("$.data.jobs[0].companyName").value("회사 A"))
@@ -322,7 +322,7 @@ class DiagnosisControllerTest {
     private DiagnosisCreateResponse createResponse() {
         return new DiagnosisCreateResponse(
                 1L,
-                DiagnosisStatus.PENDING,
+                DiagnosisStatus.PROCESSING,
                 List.of(new DiagnosisCreateResponse.JobResponse(
                         10L,
                         1,
