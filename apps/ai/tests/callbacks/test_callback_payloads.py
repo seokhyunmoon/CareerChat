@@ -7,6 +7,7 @@ from app.callbacks.payloads import (
     build_fail_callback_payload,
 )
 from app.core.error_codes import AnalysisErrorCode
+from app.llm.errors import InvalidLLMResponseError, LLMProviderError, LLMTimeoutError
 from app.pipeline.context import AnalysisPipelineResult
 from app.pipeline.reporting import AnalysisReportGenerator
 from app.schemas.metadata import AnalysisMetadata
@@ -126,3 +127,24 @@ def test_build_fail_callback_payload_uses_exception_type_when_message_is_blank()
 
     assert callback_payload.errorCode == "UNEXPECTED_ERROR"
     assert callback_payload.errorMessage == "RuntimeError"
+
+
+def test_build_fail_callback_payload_maps_llm_exceptions() -> None:
+    task_payload = build_task_payload()
+
+    timeout_payload = build_fail_callback_payload(
+        task_payload=task_payload,
+        exc=LLMTimeoutError("timeout"),
+    )
+    provider_payload = build_fail_callback_payload(
+        task_payload=task_payload,
+        exc=LLMProviderError("provider failed"),
+    )
+    invalid_response_payload = build_fail_callback_payload(
+        task_payload=task_payload,
+        exc=InvalidLLMResponseError("invalid response"),
+    )
+
+    assert timeout_payload.errorCode == "LLM_TIMEOUT"
+    assert provider_payload.errorCode == "LLM_PROVIDER_ERROR"
+    assert invalid_response_payload.errorCode == "INVALID_AI_RESPONSE"
