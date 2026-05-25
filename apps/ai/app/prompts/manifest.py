@@ -15,8 +15,7 @@ class PromptDefinition:
     key: str
     version: str
     step: PipelineStep
-    system_template_path: str
-    user_template_path: str
+    template_path: str
     default_model: str = DEFAULT_MODEL_NAME
 
 
@@ -31,24 +30,21 @@ JOB_STRUCTURING_PROMPT = PromptDefinition(
     key="job_structuring",
     version="job-structuring-v1",
     step=PipelineStep.JOB_STRUCTURING,
-    system_template_path="job_structuring/v1_system.md",
-    user_template_path="job_structuring/v1_user.md",
+    template_path="job_structuring_v1.md",
 )
 
 REQUIREMENT_MATCHING_PROMPT = PromptDefinition(
     key="requirement_matching",
     version="requirement-matching-v1",
     step=PipelineStep.REQUIREMENT_MATCHING,
-    system_template_path="requirement_matching/v1_system.md",
-    user_template_path="requirement_matching/v1_user.md",
+    template_path="requirement_matching_v1.md",
 )
 
 REPORT_GENERATION_PROMPT = PromptDefinition(
     key="report_generation",
     version="report-generation-v1",
     step=PipelineStep.REPORT_GENERATION,
-    system_template_path="report_generation/v1_system.md",
-    user_template_path="report_generation/v1_user.md",
+    template_path="report_generation_v1.md",
 )
 
 PROMPT_SETS: dict[str, PromptSet] = {

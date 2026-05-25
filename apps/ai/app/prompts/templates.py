@@ -44,15 +44,17 @@ def build_job_structuring_prompt(
         },
     }
 
+    prompt_template = render_prompt_template(
+        definition.template_path,
+        {"payload_json": _dump_prompt_json(payload)},
+    )
+
     return PromptExecutionRequest(
         promptKey=definition.key,
         promptVersion=definition.version,
         modelName=model_name,
-        systemPrompt=render_prompt_template(definition.system_template_path),
-        userPrompt=render_prompt_template(
-            definition.user_template_path,
-            {"payload_json": _dump_prompt_json(payload)},
-        ),
+        systemPrompt=prompt_template.system_prompt,
+        userPrompt=prompt_template.user_prompt,
         responseSchemaName="JobRequirementsOutput",
         temperature=temperature,
         metadata={"jdId": job.jdId},
@@ -91,15 +93,17 @@ def build_requirement_matching_prompt(
         },
     }
 
+    prompt_template = render_prompt_template(
+        definition.template_path,
+        {"payload_json": _dump_prompt_json(payload)},
+    )
+
     return PromptExecutionRequest(
         promptKey=definition.key,
         promptVersion=definition.version,
         modelName=model_name,
-        systemPrompt=render_prompt_template(definition.system_template_path),
-        userPrompt=render_prompt_template(
-            definition.user_template_path,
-            {"payload_json": _dump_prompt_json(payload)},
-        ),
+        systemPrompt=prompt_template.system_prompt,
+        userPrompt=prompt_template.user_prompt,
         responseSchemaName="RequirementMatchDecision",
         temperature=temperature,
         metadata={"jdId": job.jdId, "requirementId": requirement.requirementId},
@@ -142,15 +146,17 @@ def build_report_generation_prompt(
         },
     }
 
+    prompt_template = render_prompt_template(
+        definition.template_path,
+        {"payload_json": _dump_prompt_json(payload)},
+    )
+
     return PromptExecutionRequest(
         promptKey=definition.key,
         promptVersion=definition.version,
         modelName=model_name,
-        systemPrompt=render_prompt_template(definition.system_template_path),
-        userPrompt=render_prompt_template(
-            definition.user_template_path,
-            {"payload_json": _dump_prompt_json(payload)},
-        ),
+        systemPrompt=prompt_template.system_prompt,
+        userPrompt=prompt_template.user_prompt,
         responseSchemaName="ReportGenerationOutput",
         temperature=temperature,
         metadata={"jobCount": len(job_results)},

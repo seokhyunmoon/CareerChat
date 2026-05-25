@@ -21,17 +21,25 @@ from app.schemas.analysis_result import (
 
 
 def test_prompt_manifest_points_to_versioned_template_files() -> None:
-    assert JOB_STRUCTURING_PROMPT.system_template_path == "job_structuring/v1_system.md"
-    assert (
-        REQUIREMENT_MATCHING_PROMPT.system_template_path
-        == "requirement_matching/v1_system.md"
-    )
-    assert REPORT_GENERATION_PROMPT.system_template_path == "report_generation/v1_system.md"
+    assert JOB_STRUCTURING_PROMPT.template_path == "job_structuring_v1.md"
+    assert REQUIREMENT_MATCHING_PROMPT.template_path == "requirement_matching_v1.md"
+    assert REPORT_GENERATION_PROMPT.template_path == "report_generation_v1.md"
 
 
 def test_render_prompt_template_rejects_unknown_file() -> None:
     with pytest.raises(FileNotFoundError):
-        render_prompt_template("unknown/v1_system.md")
+        render_prompt_template("unknown_v1.md")
+
+
+def test_render_prompt_template_splits_system_and_user_sections() -> None:
+    rendered = render_prompt_template(
+        "job_structuring_v1.md",
+        {"payload_json": '{"job": {"jdId": 10}}'},
+    )
+
+    assert "채용공고를 분석" in rendered.system_prompt
+    assert "payload:" in rendered.user_prompt
+    assert '"jdId": 10' in rendered.user_prompt
 
 
 def test_job_structuring_prompt_includes_quality_rules() -> None:
