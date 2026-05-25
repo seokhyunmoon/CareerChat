@@ -9,9 +9,11 @@ from app.retrieval.points import (
     build_profile_chunk_point_id,
     build_profile_chunk_points,
 )
+from app.retrieval.vector_store import ProfileVectorStore
 
 __all__ = [
     "ProfileSnapshotChunk",
+    "ProfileVectorStore",
     "QdrantProfileChunkPayload",
     "build_diagnosis_filter",
     "build_profile_chunk_point",
