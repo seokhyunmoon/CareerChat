@@ -12,6 +12,7 @@ from app.prompts.manifest import (
     PromptSet,
     resolve_prompt_set,
 )
+from app.prompts.renderer import render_prompt_template
 from app.prompts.templates import (
     build_job_structuring_prompt,
     build_report_generation_prompt,
@@ -31,5 +32,6 @@ __all__ = [
     "build_job_structuring_prompt",
     "build_report_generation_prompt",
     "build_requirement_matching_prompt",
+    "render_prompt_template",
     "resolve_prompt_set",
 ]

@@ -10,21 +10,13 @@ from app.prompts.manifest import (
     REQUIREMENT_MATCHING_PROMPT,
     PromptDefinition,
 )
+from app.prompts.renderer import render_prompt_template
 from app.schemas.analysis_job import AnalysisJobPosting
 from app.schemas.analysis_result import (
     JobAnalysisResult,
     JobRequirement,
     MatchedProfileEvidence,
 )
-
-JSON_OUTPUT_RULES = "\n".join(
-    [
-        "응답은 Markdown code block 없이 순수 JSON object만 반환한다.",
-        "설명 문장, 주석, trailing comma를 JSON 밖에 추가하지 않는다.",
-        "입력에 없는 프로필 근거, 회사 정보, 성과 수치를 새로 만들지 않는다.",
-    ]
-)
-
 
 def build_job_structuring_prompt(
     *,
@@ -56,14 +48,11 @@ def build_job_structuring_prompt(
         promptKey=definition.key,
         promptVersion=definition.version,
         modelName=model_name,
-        systemPrompt="\n".join(
-            [
-                "너는 개발자 채용공고를 분석해 요구사항을 구조화하는 채용 분석가다.",
-                "요구사항은 최대 12개로 묶고, 같은 의미의 항목은 중복 생성하지 않는다.",
-                JSON_OUTPUT_RULES,
-            ]
+        systemPrompt=render_prompt_template(definition.system_template_path),
+        userPrompt=render_prompt_template(
+            definition.user_template_path,
+            {"payload_json": _dump_prompt_json(payload)},
         ),
-        userPrompt=_dump_prompt_json(payload),
         responseSchemaName="JobRequirementsOutput",
         temperature=temperature,
         metadata={"jdId": job.jdId},
@@ -106,15 +95,11 @@ def build_requirement_matching_prompt(
         promptKey=definition.key,
         promptVersion=definition.version,
         modelName=model_name,
-        systemPrompt="\n".join(
-            [
-                "너는 개발자 이력과 채용공고 요구사항의 적합도를 판단하는 분석가다.",
-                "evidenceIndexes에는 입력 evidence 배열에 존재하는 index만 넣는다.",
-                "missing 상태에서는 evidenceIndexes를 빈 배열로 둔다.",
-                JSON_OUTPUT_RULES,
-            ]
+        systemPrompt=render_prompt_template(definition.system_template_path),
+        userPrompt=render_prompt_template(
+            definition.user_template_path,
+            {"payload_json": _dump_prompt_json(payload)},
         ),
-        userPrompt=_dump_prompt_json(payload),
         responseSchemaName="RequirementMatchDecision",
         temperature=temperature,
         metadata={"jdId": job.jdId, "requirementId": requirement.requirementId},
@@ -161,15 +146,11 @@ def build_report_generation_prompt(
         promptKey=definition.key,
         promptVersion=definition.version,
         modelName=model_name,
-        systemPrompt="\n".join(
-            [
-                "너는 개발자 취업 준비생에게 공고별 지원 전략을 설명하는 커리어 분석가다.",
-                "입력된 match 결과와 점수만 근거로 사용하고 새로운 경험을 만들지 않는다.",
-                "reportContent는 사용자에게 바로 보여줄 수 있는 Markdown으로 작성한다.",
-                JSON_OUTPUT_RULES,
-            ]
+        systemPrompt=render_prompt_template(definition.system_template_path),
+        userPrompt=render_prompt_template(
+            definition.user_template_path,
+            {"payload_json": _dump_prompt_json(payload)},
         ),
-        userPrompt=_dump_prompt_json(payload),
         responseSchemaName="ReportGenerationOutput",
         temperature=temperature,
         metadata={"jobCount": len(job_results)},
