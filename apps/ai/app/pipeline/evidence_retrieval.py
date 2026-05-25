@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Any, Protocol
 
 from app.pipeline.deterministic_text import calculate_term_relevance, extract_match_terms
+from app.retrieval.chunks import QdrantProfileChunkPayload
 from app.retrieval.chunking import build_profile_snapshot_chunks
+from app.retrieval.embeddings import TextEmbeddingProvider
 from app.schemas.analysis_result import JobRequirement, MatchedProfileEvidence
 from app.schemas.profile_snapshot import ProfileSnapshot
 
@@ -17,6 +19,52 @@ class ProfileEvidenceRetriever(Protocol):
         requirement: JobRequirement,
         top_k: int,
     ) -> list[MatchedProfileEvidence]: ...
+
+
+class ProfileChunkSearcher(Protocol):
+    def search_profile_chunks(
+        self,
+        *,
+        diagnosis_id: int,
+        query_vector: list[float],
+        limit: int,
+    ) -> list[Any]: ...
+
+
+class QdrantProfileEvidenceRetriever:
+    def __init__(
+        self,
+        *,
+        embedding_provider: TextEmbeddingProvider,
+        vector_store: ProfileChunkSearcher,
+    ) -> None:
+        self._embedding_provider = embedding_provider
+        self._vector_store = vector_store
+
+    def retrieve_evidence(
+        self,
+        *,
+        diagnosis_id: int,
+        profile_snapshot: ProfileSnapshot,
+        requirement: JobRequirement,
+        top_k: int = 3,
+    ) -> list[MatchedProfileEvidence]:
+        if top_k < 1:
+            raise ValueError("top_k must be greater than 0")
+
+        query_text = _build_requirement_query_text(requirement)
+        query_vector = self._embedding_provider.embed_texts([query_text])[0]
+        scored_points = self._vector_store.search_profile_chunks(
+            diagnosis_id=diagnosis_id,
+            query_vector=query_vector,
+            limit=top_k,
+        )
+
+        return [
+            _build_evidence_from_scored_point(scored_point)
+            for scored_point in scored_points
+            if getattr(scored_point, "payload", None)
+        ]
 
 
 class SnapshotProfileEvidenceRetriever:
@@ -57,3 +105,24 @@ class SnapshotProfileEvidenceRetriever:
             )
             for relevance_score, _, chunk in scored_chunks[:top_k]
         ]
+
+
+def _build_requirement_query_text(requirement: JobRequirement) -> str:
+    parts = [requirement.description, *requirement.keywords]
+    return " ".join(part for part in parts if part)
+
+
+def _build_evidence_from_scored_point(scored_point: Any) -> MatchedProfileEvidence:
+    payload = QdrantProfileChunkPayload.model_validate(scored_point.payload)
+
+    return MatchedProfileEvidence(
+        evidence={
+            "sourceType": payload.sourceType,
+            "sourceId": payload.sourceId,
+            "chunkIndex": payload.chunkIndex,
+            "title": payload.title,
+            "text": payload.text,
+        },
+        relevanceScore=round(float(scored_point.score), 4),
+        rationale="Qdrant profile evidence matched the requirement query.",
+    )

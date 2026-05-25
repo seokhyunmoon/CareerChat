@@ -3,6 +3,7 @@
 from app.pipeline.context import AnalysisPipelineContext, AnalysisPipelineResult
 from app.pipeline.evidence_retrieval import (
     ProfileEvidenceRetriever,
+    QdrantProfileEvidenceRetriever,
     SnapshotProfileEvidenceRetriever,
 )
 from app.pipeline.job_structuring import DeterministicJobRequirementExtractor
@@ -19,6 +20,7 @@ __all__ = [
     "DeterministicJobRequirementExtractor",
     "DeterministicRequirementMatcher",
     "ProfileEvidenceRetriever",
+    "QdrantProfileEvidenceRetriever",
     "RequirementScoringService",
     "SnapshotProfileEvidenceRetriever",
 ]
