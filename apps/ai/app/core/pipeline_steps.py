@@ -14,7 +14,6 @@ class PipelineStep(str, Enum):
     CROSS_JOB_COMPARISON = "CROSS_JOB_COMPARISON"
     REPORT_GENERATION = "REPORT_GENERATION"
     RESULT_PACKAGING = "RESULT_PACKAGING"
-    SPRING_CALLBACK = "SPRING_CALLBACK"
 
 
 ORDERED_PIPELINE_STEPS: tuple[PipelineStep, ...] = (
@@ -28,7 +27,6 @@ ORDERED_PIPELINE_STEPS: tuple[PipelineStep, ...] = (
     PipelineStep.CROSS_JOB_COMPARISON,
     PipelineStep.REPORT_GENERATION,
     PipelineStep.RESULT_PACKAGING,
-    PipelineStep.SPRING_CALLBACK,
 )
 
 

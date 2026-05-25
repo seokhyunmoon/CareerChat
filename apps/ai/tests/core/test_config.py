@@ -21,3 +21,11 @@ def test_settings_can_be_overridden_by_field_name() -> None:
 def test_settings_reject_invalid_qdrant_vector_size() -> None:
     with pytest.raises(ValidationError):
         Settings(qdrant_vector_size=0)
+
+
+def test_settings_reads_backend_callback_token_env_name(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AI_CALLBACK_TOKEN", "callback-token")
+
+    settings = Settings()
+
+    assert settings.spring_callback_internal_token == "callback-token"
