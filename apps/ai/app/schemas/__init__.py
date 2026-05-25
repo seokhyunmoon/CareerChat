@@ -6,6 +6,13 @@ from app.schemas.analysis_job import (
     AnalysisJobRequest,
     CallbackTarget,
 )
+from app.schemas.analysis_result import (
+    AnalysisReportPackage,
+    JobAnalysisResult,
+    JobRequirement,
+    MatchedProfileEvidence,
+    RequirementMatch,
+)
 from app.schemas.callback import (
     CompleteCallbackJobResult,
     CompleteCallbackPayload,
@@ -28,6 +35,7 @@ __all__ = [
     "AnalysisJobPosting",
     "AnalysisJobRequest",
     "AnalysisMetadata",
+    "AnalysisReportPackage",
     "AnalysisStepMetadata",
     "CallbackTarget",
     "CompleteCallbackJobResult",
@@ -35,9 +43,13 @@ __all__ = [
     "EducationSnapshot",
     "ErrorDetails",
     "FailCallbackPayload",
+    "JobAnalysisResult",
+    "JobRequirement",
+    "MatchedProfileEvidence",
     "ProfileEvidenceReference",
     "ProfileSnapshot",
     "ProjectSnapshot",
+    "RequirementMatch",
     "SnapshotProfile",
     "WorkExperienceSnapshot",
 ]
