@@ -95,6 +95,14 @@ def test_execute_analysis_task_posts_complete_callback_on_success() -> None:
     assert len(callback_client.complete_payloads) == 1
     assert callback_client.complete_payloads[0].taskId == payload.taskId
     assert callback_client.complete_payloads[0].jobs[0].jdId == payload.jobs[0].jdId
+    assert (
+        callback_client.complete_payloads[0].reportSummary
+        == result.reportPackage.reportSummary
+    )
+    assert (
+        callback_client.complete_payloads[0].reportContent
+        == result.reportPackage.reportContent
+    )
     assert callback_client.fail_payloads == []
 
 
@@ -140,4 +148,8 @@ def test_run_analysis_task_uses_default_pipeline_and_posts_complete_callback(
     assert result["reportPackage"]["taskId"] == "task-1"
     assert len(callback_client.complete_payloads) == 1
     assert callback_client.complete_payloads[0].taskId == "task-1"
+    assert (
+        callback_client.complete_payloads[0].reportSummary
+        == result["reportPackage"]["reportSummary"]
+    )
     assert callback_client.fail_payloads == []
