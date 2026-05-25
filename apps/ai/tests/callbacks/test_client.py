@@ -28,7 +28,6 @@ def test_post_complete_sends_authorization_header_and_payload() -> None:
 
     task_payload = build_task_payload()
     callback_payload = build_complete_callback_payload(
-        task_payload=task_payload,
         result=build_pipeline_result(task_payload),
     )
     callback_client = SpringCallbackClient(
@@ -90,7 +89,6 @@ def test_post_complete_raises_for_non_success_response() -> None:
 
     task_payload = build_task_payload()
     callback_payload = build_complete_callback_payload(
-        task_payload=task_payload,
         result=build_pipeline_result(task_payload),
     )
     callback_client = SpringCallbackClient(

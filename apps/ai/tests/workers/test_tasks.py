@@ -5,6 +5,7 @@ from pydantic import ValidationError
 
 import app.workers.tasks as tasks_module
 from app.pipeline.context import AnalysisPipelineContext, AnalysisPipelineResult
+from app.pipeline.reporting import AnalysisReportGenerator
 from app.schemas.callback import CompleteCallbackPayload, FailCallbackPayload
 from app.schemas.metadata import AnalysisMetadata
 from app.workers.celery_app import celery_app
@@ -23,6 +24,7 @@ class FakePipeline:
             diagnosisId=context.diagnosisId,
             taskId=context.taskId,
             metadata=context.metadata,
+            reportPackage=AnalysisReportGenerator().generate_report(context),
         )
 
 
@@ -93,6 +95,14 @@ def test_execute_analysis_task_posts_complete_callback_on_success() -> None:
     assert len(callback_client.complete_payloads) == 1
     assert callback_client.complete_payloads[0].taskId == payload.taskId
     assert callback_client.complete_payloads[0].jobs[0].jdId == payload.jobs[0].jdId
+    assert (
+        callback_client.complete_payloads[0].reportSummary
+        == result.reportPackage.reportSummary
+    )
+    assert (
+        callback_client.complete_payloads[0].reportContent
+        == result.reportPackage.reportContent
+    )
     assert callback_client.fail_payloads == []
 
 
@@ -122,7 +132,7 @@ def test_run_analysis_task_rejects_invalid_payload() -> None:
         run_analysis_task(payload)
 
 
-def test_run_analysis_task_posts_fail_callback_until_default_pipeline_is_implemented(
+def test_run_analysis_task_uses_default_pipeline_and_posts_complete_callback(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     callback_client = FakeCallbackClient()
@@ -132,8 +142,14 @@ def test_run_analysis_task_posts_fail_callback_until_default_pipeline_is_impleme
         lambda: callback_client,
     )
 
-    with pytest.raises(NotImplementedError):
-        run_analysis_task(build_payload_dict())
+    result = run_analysis_task(build_payload_dict())
 
-    assert len(callback_client.fail_payloads) == 1
-    assert callback_client.fail_payloads[0].taskId == "task-1"
+    assert result["taskId"] == "task-1"
+    assert result["reportPackage"]["taskId"] == "task-1"
+    assert len(callback_client.complete_payloads) == 1
+    assert callback_client.complete_payloads[0].taskId == "task-1"
+    assert (
+        callback_client.complete_payloads[0].reportSummary
+        == result["reportPackage"]["reportSummary"]
+    )
+    assert callback_client.fail_payloads == []

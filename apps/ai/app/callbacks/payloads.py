@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 
 from app.core.error_codes import AnalysisErrorCode, is_retryable_error
 from app.pipeline.context import AnalysisPipelineResult
+from app.schemas.analysis_result import JobAnalysisResult
 from app.schemas.callback import (
     CompleteCallbackJobResult,
     CompleteCallbackPayload,
@@ -19,30 +20,49 @@ def utc_now() -> datetime:
 
 def build_complete_callback_payload(
     *,
-    task_payload: AnalysisTaskPayload,
     result: AnalysisPipelineResult,
 ) -> CompleteCallbackPayload:
+    report_package = result.reportPackage
+
     return CompleteCallbackPayload(
         taskId=result.taskId,
-        reportSummary="AI analysis pipeline completed.",
-        reportContent="{}",
+        reportSummary=report_package.reportSummary,
+        reportContent=report_package.reportContent,
         completedAt=utc_now(),
         modelName=result.metadata.defaultModel,
         promptVersion=result.metadata.promptSetVersion,
         analysisMetadata=result.metadata.model_dump_json(),
         jobs=[
-            CompleteCallbackJobResult(
-                jdId=job.jdId,
-                rankOrder=job.displayOrder,
-                fitScore=0,
-                strengthsSummary=None,
-                gapsSummary=None,
-                highlightPoints=None,
-                matchDetails="{}",
-            )
-            for job in task_payload.jobs
+            _build_complete_callback_job_result(job)
+            for job in report_package.jobs
         ],
     )
+
+
+def _build_complete_callback_job_result(
+    job: JobAnalysisResult,
+) -> CompleteCallbackJobResult:
+    return CompleteCallbackJobResult(
+        jdId=job.jdId,
+        rankOrder=job.rankOrder,
+        fitScore=job.fitScore,
+        strengthsSummary=job.strengthsSummary,
+        gapsSummary=job.gapsSummary,
+        highlightPoints=_dump_json_or_none(job.highlightPoints),
+        matchDetails=json.dumps(
+            [
+                requirement_match.model_dump(mode="json")
+                for requirement_match in job.requirementMatches
+            ],
+            ensure_ascii=False,
+        ),
+    )
+
+
+def _dump_json_or_none(value: list[str]) -> str | None:
+    if not value:
+        return None
+    return json.dumps(value, ensure_ascii=False)
 
 
 def build_fail_callback_payload(

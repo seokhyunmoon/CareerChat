@@ -65,7 +65,6 @@ def execute_analysis_task(
         raise
 
     complete_payload = build_complete_callback_payload(
-        task_payload=payload,
         result=result,
     )
     spring_callback_client.post_complete(
