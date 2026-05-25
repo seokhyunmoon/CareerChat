@@ -28,6 +28,16 @@ class Settings(BaseSettings):
         validation_alias="GROQ_TEMPERATURE",
         ge=0,
     )
+    groq_timeout_seconds: float = Field(
+        default=30.0,
+        validation_alias="GROQ_TIMEOUT_SECONDS",
+        gt=0,
+    )
+    groq_max_retries: int = Field(
+        default=2,
+        validation_alias="GROQ_MAX_RETRIES",
+        ge=0,
+    )
     embedding_model: str = Field(
         default="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
         validation_alias="EMBEDDING_MODEL",
