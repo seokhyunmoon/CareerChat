@@ -1,4 +1,4 @@
-package com.careerchat.backend.ai.dto;
+package com.careerchat.backend.diagnosis.ai.dto;
 
 import java.time.LocalDate;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.careerchat.backend.ai.service;
+package com.careerchat.backend.diagnosis.ai.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -6,12 +6,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.careerchat.backend.ai.client.AiAnalysisClient;
-import com.careerchat.backend.ai.client.AiAnalysisClientException;
-import com.careerchat.backend.ai.config.AiBackendProperties;
-import com.careerchat.backend.ai.dto.AiAnalysisJobCreateResponse;
-import com.careerchat.backend.ai.dto.AiAnalysisJobRequest;
-import com.careerchat.backend.ai.dto.AiProfileSnapshot;
+import com.careerchat.backend.diagnosis.ai.client.AiAnalysisClient;
+import com.careerchat.backend.diagnosis.ai.client.AiAnalysisClientException;
+import com.careerchat.backend.diagnosis.ai.config.AiBackendProperties;
+import com.careerchat.backend.diagnosis.ai.dto.AiAnalysisJobCreateResponse;
+import com.careerchat.backend.diagnosis.ai.dto.AiAnalysisJobRequest;
+import com.careerchat.backend.diagnosis.ai.dto.AiProfileSnapshot;
 import com.careerchat.backend.diagnosis.domain.Diagnosis;
 import com.careerchat.backend.diagnosis.domain.DiagnosisStatus;
 import com.careerchat.backend.diagnosis.domain.JDResult;

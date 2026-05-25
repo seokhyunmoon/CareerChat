@@ -9,7 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.careerchat.backend.ai.service.AiAnalysisJobStarter;
+import com.careerchat.backend.diagnosis.ai.service.AiAnalysisJobStarter;
 import com.careerchat.backend.diagnosis.domain.Diagnosis;
 import com.careerchat.backend.diagnosis.domain.DiagnosisStatus;
 import com.careerchat.backend.diagnosis.domain.JDResult;

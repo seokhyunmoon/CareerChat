@@ -1,8 +1,8 @@
-package com.careerchat.backend.ai.client;
+package com.careerchat.backend.diagnosis.ai.client;
 
-import com.careerchat.backend.ai.config.AiBackendProperties;
-import com.careerchat.backend.ai.dto.AiAnalysisJobCreateResponse;
-import com.careerchat.backend.ai.dto.AiAnalysisJobRequest;
+import com.careerchat.backend.diagnosis.ai.config.AiBackendProperties;
+import com.careerchat.backend.diagnosis.ai.dto.AiAnalysisJobCreateResponse;
+import com.careerchat.backend.diagnosis.ai.dto.AiAnalysisJobRequest;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;

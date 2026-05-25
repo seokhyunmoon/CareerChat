@@ -1,10 +1,10 @@
-package com.careerchat.backend.ai.service;
+package com.careerchat.backend.diagnosis.ai.service;
 
-import com.careerchat.backend.ai.client.AiAnalysisClient;
-import com.careerchat.backend.ai.client.AiAnalysisClientException;
-import com.careerchat.backend.ai.dto.AiAnalysisJobCreateResponse;
-import com.careerchat.backend.ai.dto.AiAnalysisJobRequest;
-import com.careerchat.backend.ai.dto.AiProfileSnapshot;
+import com.careerchat.backend.diagnosis.ai.client.AiAnalysisClient;
+import com.careerchat.backend.diagnosis.ai.client.AiAnalysisClientException;
+import com.careerchat.backend.diagnosis.ai.dto.AiAnalysisJobCreateResponse;
+import com.careerchat.backend.diagnosis.ai.dto.AiAnalysisJobRequest;
+import com.careerchat.backend.diagnosis.ai.dto.AiProfileSnapshot;
 import com.careerchat.backend.diagnosis.domain.Diagnosis;
 import com.careerchat.backend.diagnosis.domain.JDResult;
 import com.fasterxml.jackson.core.JsonProcessingException;

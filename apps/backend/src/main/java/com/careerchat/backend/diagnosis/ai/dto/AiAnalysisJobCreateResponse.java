@@ -1,4 +1,4 @@
-package com.careerchat.backend.ai.dto;
+package com.careerchat.backend.diagnosis.ai.dto;
 
 public record AiAnalysisJobCreateResponse(
         Long diagnosisId,

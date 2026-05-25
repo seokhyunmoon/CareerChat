@@ -1,6 +1,6 @@
-package com.careerchat.backend.ai.service;
+package com.careerchat.backend.diagnosis.ai.service;
 
-import com.careerchat.backend.ai.dto.AiProfileSnapshot;
+import com.careerchat.backend.diagnosis.ai.dto.AiProfileSnapshot;
 import com.careerchat.backend.profile.domain.Achievement;
 import com.careerchat.backend.profile.domain.Education;
 import com.careerchat.backend.profile.domain.ExperienceLevel;

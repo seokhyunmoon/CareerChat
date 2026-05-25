@@ -1,6 +1,6 @@
 package com.careerchat.backend.diagnosis.service;
 
-import com.careerchat.backend.ai.service.AiAnalysisJobStarter;
+import com.careerchat.backend.diagnosis.ai.service.AiAnalysisJobStarter;
 import com.careerchat.backend.diagnosis.domain.Diagnosis;
 import com.careerchat.backend.diagnosis.domain.JDResult;
 import com.careerchat.backend.diagnosis.dto.AiDiagnosisCompleteRequest;

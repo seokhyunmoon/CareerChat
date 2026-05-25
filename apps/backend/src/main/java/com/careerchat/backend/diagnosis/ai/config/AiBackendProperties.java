@@ -1,4 +1,4 @@
-package com.careerchat.backend.ai.config;
+package com.careerchat.backend.diagnosis.ai.config;
 
 import java.net.URI;
 import java.time.Duration;

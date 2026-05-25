@@ -1,10 +1,10 @@
-package com.careerchat.backend.ai.service;
+package com.careerchat.backend.diagnosis.ai.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.careerchat.backend.ai.config.AiBackendProperties;
-import com.careerchat.backend.ai.dto.AiAnalysisJobRequest;
-import com.careerchat.backend.ai.dto.AiProfileSnapshot;
+import com.careerchat.backend.diagnosis.ai.config.AiBackendProperties;
+import com.careerchat.backend.diagnosis.ai.dto.AiAnalysisJobRequest;
+import com.careerchat.backend.diagnosis.ai.dto.AiProfileSnapshot;
 import com.careerchat.backend.diagnosis.domain.Diagnosis;
 import com.careerchat.backend.diagnosis.domain.JDResult;
 import com.careerchat.backend.profile.domain.ExperienceLevel;

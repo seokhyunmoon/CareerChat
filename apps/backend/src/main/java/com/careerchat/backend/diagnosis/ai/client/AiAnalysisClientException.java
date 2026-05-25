@@ -1,4 +1,4 @@
-package com.careerchat.backend.ai.client;
+package com.careerchat.backend.diagnosis.ai.client;
 
 public class AiAnalysisClientException extends RuntimeException {
 
