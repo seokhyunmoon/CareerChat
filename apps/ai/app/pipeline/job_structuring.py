@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 
+from app.llm.provider import LLMProvider, PromptExecutionResult
+from app.llm.structured import JobRequirementsOutput, parse_structured_output
 from app.pipeline.deterministic_text import KNOWN_MATCH_TERMS, extract_match_terms
+from app.prompts.templates import build_job_structuring_prompt
 from app.schemas.analysis_job import AnalysisJobPosting
 from app.schemas.analysis_result import JobRequirement
 
@@ -35,6 +39,45 @@ class DeterministicJobRequirementExtractor:
             )
 
         return requirements
+
+
+@dataclass(frozen=True)
+class JobRequirementExtractionResult:
+    requirements: list[JobRequirement]
+    execution: PromptExecutionResult
+
+
+class LLMJobRequirementExtractor:
+    def __init__(
+        self,
+        *,
+        llm_provider: LLMProvider,
+        model_name: str,
+        temperature: float | None = None,
+    ) -> None:
+        self._llm_provider = llm_provider
+        self._model_name = model_name
+        self._temperature = temperature
+
+    def extract_requirements(
+        self,
+        job: AnalysisJobPosting,
+    ) -> JobRequirementExtractionResult:
+        request = build_job_structuring_prompt(
+            job=job,
+            model_name=self._model_name,
+            temperature=self._temperature,
+        )
+        execution = self._llm_provider.execute_prompt(request)
+        output = parse_structured_output(
+            content=execution.content,
+            schema=JobRequirementsOutput,
+        )
+
+        return JobRequirementExtractionResult(
+            requirements=output.requirements,
+            execution=execution,
+        )
 
 
 def _split_requirement_candidates(content: str) -> list[str]:

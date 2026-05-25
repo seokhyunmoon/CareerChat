@@ -4,6 +4,7 @@ import json
 from datetime import UTC, datetime
 
 from app.core.error_codes import AnalysisErrorCode, is_retryable_error
+from app.llm.errors import InvalidLLMResponseError, LLMProviderError, LLMTimeoutError
 from app.pipeline.context import AnalysisPipelineResult
 from app.schemas.analysis_result import JobAnalysisResult
 from app.schemas.callback import (
@@ -72,17 +73,34 @@ def build_fail_callback_payload(
     failed_step: str | None = None,
     error_code: AnalysisErrorCode = AnalysisErrorCode.UNEXPECTED_ERROR,
 ) -> FailCallbackPayload:
+    resolved_error_code = _resolve_error_code(exc=exc, fallback=error_code)
     error_message = str(exc).strip() or exc.__class__.__name__
     error_details = {
         "exceptionType": exc.__class__.__name__,
-        "retryable": is_retryable_error(error_code),
+        "retryable": is_retryable_error(resolved_error_code),
     }
 
     return FailCallbackPayload(
         taskId=task_payload.taskId,
-        errorCode=error_code.value,
+        errorCode=resolved_error_code.value,
         errorMessage=error_message,
         failedStep=failed_step,
         failedAt=utc_now(),
         errorDetails=json.dumps(error_details, ensure_ascii=False),
     )
+
+
+def _resolve_error_code(
+    *,
+    exc: Exception,
+    fallback: AnalysisErrorCode,
+) -> AnalysisErrorCode:
+    if fallback != AnalysisErrorCode.UNEXPECTED_ERROR:
+        return fallback
+    if isinstance(exc, LLMTimeoutError):
+        return AnalysisErrorCode.LLM_TIMEOUT
+    if isinstance(exc, LLMProviderError):
+        return AnalysisErrorCode.LLM_PROVIDER_ERROR
+    if isinstance(exc, InvalidLLMResponseError):
+        return AnalysisErrorCode.INVALID_AI_RESPONSE
+    return fallback

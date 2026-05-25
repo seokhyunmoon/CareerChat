@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -18,6 +19,10 @@ class Settings(BaseSettings):
     )
 
     groq_api_key: str | None = Field(default=None, validation_alias="GROQ_API_KEY")
+    llm_provider: Literal["deterministic", "groq"] = Field(
+        default="deterministic",
+        validation_alias="LLM_PROVIDER",
+    )
     groq_model: str = Field(
         default="llama-3.3-70b-versatile",
         validation_alias="GROQ_MODEL",
@@ -37,6 +42,10 @@ class Settings(BaseSettings):
         default=2,
         validation_alias="GROQ_MAX_RETRIES",
         ge=0,
+    )
+    llm_deterministic_fallback_enabled: bool = Field(
+        default=True,
+        validation_alias="LLM_DETERMINISTIC_FALLBACK_ENABLED",
     )
     embedding_model: str = Field(
         default="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",

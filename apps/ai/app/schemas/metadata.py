@@ -7,8 +7,10 @@ class AnalysisStepMetadata(BaseModel):
     step: str
     modelName: str | None = None
     promptVersion: str | None = None
+    providerName: str | None = None
     durationMs: int | None = None
     retryCount: int | None = None
+    fallbackUsed: bool | None = None
 
 
 class AnalysisMetadata(BaseModel):

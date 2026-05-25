@@ -1,7 +1,13 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from collections.abc import Sequence
 
+from app.llm.errors import InvalidLLMResponseError
+from app.llm.provider import LLMProvider, PromptExecutionResult
+from app.llm.structured import RequirementMatchDecision, parse_structured_output
+from app.prompts.templates import build_requirement_matching_prompt
+from app.schemas.analysis_job import AnalysisJobPosting
 from app.schemas.analysis_result import (
     JobRequirement,
     MatchedProfileEvidence,
@@ -57,3 +63,77 @@ class DeterministicRequirementMatcher:
             rationale="요구사항과 연결되는 충분한 프로필 근거를 찾지 못했습니다.",
             gap="이 요구사항을 뒷받침할 프로젝트, 경력, 성과 내용을 보완해야 합니다.",
         )
+
+
+@dataclass(frozen=True)
+class RequirementMatchingResult:
+    match: RequirementMatch
+    execution: PromptExecutionResult
+
+
+class LLMRequirementMatcher:
+    def __init__(
+        self,
+        *,
+        llm_provider: LLMProvider,
+        model_name: str,
+        temperature: float | None = None,
+    ) -> None:
+        self._llm_provider = llm_provider
+        self._model_name = model_name
+        self._temperature = temperature
+
+    def match_requirement(
+        self,
+        *,
+        job: AnalysisJobPosting,
+        requirement: JobRequirement,
+        evidence: Sequence[MatchedProfileEvidence],
+    ) -> RequirementMatchingResult:
+        request = build_requirement_matching_prompt(
+            job=job,
+            requirement=requirement,
+            evidence=evidence,
+            model_name=self._model_name,
+            temperature=self._temperature,
+        )
+        execution = self._llm_provider.execute_prompt(request)
+        decision = parse_structured_output(
+            content=execution.content,
+            schema=RequirementMatchDecision,
+        )
+
+        selected_evidence = _select_evidence_by_index(
+            evidence=evidence,
+            indexes=decision.evidenceIndexes,
+        )
+        if decision.status == "missing":
+            selected_evidence = []
+
+        return RequirementMatchingResult(
+            match=RequirementMatch(
+                requirement=requirement,
+                status=decision.status,
+                confidenceScore=round(decision.confidenceScore, 4),
+                evidence=selected_evidence,
+                rationale=decision.rationale,
+                gap=decision.gap,
+            ),
+            execution=execution,
+        )
+
+
+def _select_evidence_by_index(
+    *,
+    evidence: Sequence[MatchedProfileEvidence],
+    indexes: Sequence[int],
+) -> list[MatchedProfileEvidence]:
+    selected_evidence = []
+    for index in indexes:
+        if index >= len(evidence):
+            raise InvalidLLMResponseError(
+                f"LLM returned evidence index outside range: {index}"
+            )
+        selected_evidence.append(evidence[index])
+
+    return selected_evidence
