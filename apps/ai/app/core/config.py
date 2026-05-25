@@ -52,6 +52,25 @@ class Settings(BaseSettings):
         validation_alias="QDRANT_VECTOR_SIZE",
         ge=1,
     )
+    redis_broker_url: str = Field(
+        default="redis://localhost:6379/0",
+        validation_alias="REDIS_BROKER_URL",
+        min_length=1,
+    )
+    redis_result_backend_url: str = Field(
+        default="redis://localhost:6379/1",
+        validation_alias="REDIS_RESULT_BACKEND_URL",
+        min_length=1,
+    )
+    spring_callback_internal_token: str | None = Field(
+        default=None,
+        validation_alias="SPRING_CALLBACK_INTERNAL_TOKEN",
+    )
+    callback_timeout_seconds: float = Field(
+        default=10.0,
+        validation_alias="CALLBACK_TIMEOUT_SECONDS",
+        gt=0,
+    )
 
 
 @lru_cache
