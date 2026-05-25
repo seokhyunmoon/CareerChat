@@ -3,11 +3,13 @@ package com.careerchat.backend.diagnosis.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.careerchat.backend.diagnosis.ai.service.AiAnalysisJobStarter;
 import com.careerchat.backend.diagnosis.domain.Diagnosis;
 import com.careerchat.backend.diagnosis.domain.DiagnosisStatus;
 import com.careerchat.backend.diagnosis.domain.JDResult;
@@ -40,6 +42,7 @@ class DiagnosisServiceTest {
     private ProfileRepository profileRepository;
     private DiagnosisRepository diagnosisRepository;
     private JDResultRepository jdResultRepository;
+    private AiAnalysisJobStarter aiAnalysisJobStarter;
     private DiagnosisService diagnosisService;
 
     @BeforeEach
@@ -48,11 +51,22 @@ class DiagnosisServiceTest {
         profileRepository = mock(ProfileRepository.class);
         diagnosisRepository = mock(DiagnosisRepository.class);
         jdResultRepository = mock(JDResultRepository.class);
+        aiAnalysisJobStarter = mock(AiAnalysisJobStarter.class);
+        doAnswer(invocation -> {
+            Diagnosis diagnosis = invocation.getArgument(0);
+            diagnosis.startAnalysis(
+                    "task-123",
+                    "{\"snapshotVersion\":1}",
+                    LocalDateTime.of(2026, 5, 23, 12, 0)
+            );
+            return null;
+        }).when(aiAnalysisJobStarter).start(any(Diagnosis.class), any());
         diagnosisService = new DiagnosisService(
                 userRepository,
                 profileRepository,
                 diagnosisRepository,
-                jdResultRepository
+                jdResultRepository,
+                aiAnalysisJobStarter
         );
     }
 
@@ -69,7 +83,7 @@ class DiagnosisServiceTest {
 
         DiagnosisCreateResponse response = diagnosisService.createDiagnosis(1L, request);
 
-        assertThat(response.status()).isEqualTo(DiagnosisStatus.PENDING);
+        assertThat(response.status()).isEqualTo(DiagnosisStatus.PROCESSING);
         assertThat(response.jobs()).hasSize(2);
         assertThat(response.jobs().get(0).displayOrder()).isEqualTo(1);
         assertThat(response.jobs().get(0).companyName()).isEqualTo("회사 1");
@@ -77,6 +91,7 @@ class DiagnosisServiceTest {
         assertThat(response.jobs().get(1).companyName()).isEqualTo("회사 2");
         verify(diagnosisRepository).save(any(Diagnosis.class));
         verify(jdResultRepository).saveAll(any());
+        verify(aiAnalysisJobStarter).start(any(Diagnosis.class), any());
     }
 
     @Test
@@ -94,6 +109,7 @@ class DiagnosisServiceTest {
 
         assertThat(response.jobs()).hasSize(1);
         assertThat(response.jobs().getFirst().displayOrder()).isEqualTo(1);
+        verify(aiAnalysisJobStarter).start(any(Diagnosis.class), any());
     }
 
     @Test
@@ -112,6 +128,7 @@ class DiagnosisServiceTest {
 
         verify(diagnosisRepository, never()).save(any());
         verify(jdResultRepository, never()).saveAll(any());
+        verify(aiAnalysisJobStarter, never()).start(any(Diagnosis.class), any());
     }
 
     @Test
@@ -129,6 +146,7 @@ class DiagnosisServiceTest {
         verify(profileRepository, never()).findByUser(any());
         verify(diagnosisRepository, never()).save(any());
         verify(jdResultRepository, never()).saveAll(any());
+        verify(aiAnalysisJobStarter, never()).start(any(Diagnosis.class), any());
     }
 
     @Test
@@ -148,6 +166,7 @@ class DiagnosisServiceTest {
 
         verify(diagnosisRepository, never()).save(any());
         verify(jdResultRepository, never()).saveAll(any());
+        verify(aiAnalysisJobStarter, never()).start(any(Diagnosis.class), any());
     }
 
     @Test
@@ -167,6 +186,7 @@ class DiagnosisServiceTest {
 
         verify(diagnosisRepository, never()).save(any());
         verify(jdResultRepository, never()).saveAll(any());
+        verify(aiAnalysisJobStarter, never()).start(any(Diagnosis.class), any());
     }
 
     @Test
