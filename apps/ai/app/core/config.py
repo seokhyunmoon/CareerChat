@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 AI_APP_ROOT = Path(__file__).resolve().parents[2]
@@ -64,7 +64,7 @@ class Settings(BaseSettings):
     )
     spring_callback_internal_token: str | None = Field(
         default=None,
-        validation_alias="SPRING_CALLBACK_INTERNAL_TOKEN",
+        validation_alias=AliasChoices("SPRING_CALLBACK_INTERNAL_TOKEN", "AI_CALLBACK_TOKEN"),
     )
     callback_timeout_seconds: float = Field(
         default=10.0,
