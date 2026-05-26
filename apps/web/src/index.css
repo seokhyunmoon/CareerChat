@@ -1150,6 +1150,24 @@ section { padding-top: 100px; }
 .history-header { margin-bottom: 36px; }
 .history-title { font-family: var(--serif); font-size: 38px; letter-spacing: -1px; margin-bottom: 8px; }
 .history-sub { color: var(--muted); font-size: 14px; }
+.history-feedback {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+  padding: 28px;
+}
+.history-feedback-title {
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.history-feedback p {
+  margin: 0 0 18px;
+}
 .history-list { display: flex; flex-direction: column; gap: 12px; }
 .history-item {
   background: var(--bg2);
