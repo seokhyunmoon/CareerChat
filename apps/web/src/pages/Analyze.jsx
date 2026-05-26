@@ -1,48 +1,82 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, useOutletContext } from 'react-router-dom';
+import { createDiagnosis } from '@/features/diagnosis/api/diagnosisApi';
 import AnalysisLoadingOverlay from '@/features/diagnosis/AnalysisLoadingOverlay';
+import { buildDiagnosisCreateRequest } from '@/features/diagnosis/utils/diagnosisFormMapper';
+import {
+  getDiagnosisCreateErrorMessage,
+  validateDiagnosisJobs,
+} from '@/features/diagnosis/utils/diagnosisFormValidation';
 
-const MOCK_ANALYSIS_DELAY_MS = 3600;
+function createJobCard(id) {
+  return {
+    id,
+    companyName: '',
+    position: '',
+    content: '',
+  };
+}
 
 export default function Analyze() {
   const navigate = useNavigate();
-  const [jobCards, setJobCards] = useState([1]);
+  const { user } = useOutletContext();
+  const [jobCards, setJobCards] = useState([createJobCard(1)]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const submitTimerRef = useRef(null);
-
-  useEffect(() => () => {
-    if (submitTimerRef.current) {
-      window.clearTimeout(submitTimerRef.current);
-    }
-  }, []);
+  const [formMessage, setFormMessage] = useState('');
+  const [needsProfile, setNeedsProfile] = useState(false);
 
   const addJobCard = () => {
     if (jobCards.length >= 3) return;
-    const nextId = Math.max(...jobCards, 0) + 1;
-    setJobCards([...jobCards, nextId]);
+
+    const nextId = Math.max(...jobCards.map((job) => job.id), 0) + 1;
+    setJobCards([...jobCards, createJobCard(nextId)]);
+    setFormMessage('');
   };
 
   const removeJobCard = (id) => {
-    setJobCards(jobCards.filter((cardId) => cardId !== id));
+    if (jobCards.length <= 1) return;
+
+    setJobCards(jobCards.filter((job) => job.id !== id));
+    setFormMessage('');
   };
 
-  const runAnalysis = () => {
-    if (jobCards.length === 0) {
-      alert('공고를 최소 1개 이상 입력해주세요.');
+  const updateJobCard = (id, field, value) => {
+    setJobCards((currentJobs) => currentJobs.map((job) => (
+      job.id === id ? { ...job, [field]: value } : job
+    )));
+    setFormMessage('');
+    setNeedsProfile(false);
+  };
+
+  const runAnalysis = async () => {
+    const validationMessage = validateDiagnosisJobs(jobCards);
+    if (validationMessage) {
+      setFormMessage(validationMessage);
       return;
     }
-    setIsSubmitting(true);
 
-    submitTimerRef.current = window.setTimeout(() => {
-      navigate('/result/1001');
-    }, MOCK_ANALYSIS_DELAY_MS);
+    setIsSubmitting(true);
+    setFormMessage('');
+    setNeedsProfile(false);
+
+    try {
+      const response = await createDiagnosis(buildDiagnosisCreateRequest(jobCards));
+      navigate(`/result/${response.diagnosisId}`);
+    } catch (error) {
+      setNeedsProfile(error.code === 'PROFILE_NOT_FOUND');
+      setFormMessage(getDiagnosisCreateErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  const displayName = user?.name ?? '사용자';
+  const avatarText = displayName.trim().slice(0, 1) || 'C';
 
   return (
     <>
       <div id="page-diagnose" className="page active">
         <div className="diag-layout">
-          {/* Main: job cards */}
           <div>
             <div className="jobs-header">
               <div>
@@ -55,23 +89,47 @@ export default function Analyze() {
               </div>
             </div>
             <div className="job-cards" id="job-cards">
-              {jobCards.map((id, index) => (
-                <div className="job-card" key={id}>
+              {jobCards.map((job, index) => (
+                <div className="job-card" key={job.id}>
                   <div className="job-card-header">
                     <span className="job-card-num">공고 {String(index + 1).padStart(2, '0')}</span>
-                    <button className="job-card-remove" onClick={() => removeJobCard(id)}>
+                    <button
+                      className="job-card-remove"
+                      onClick={() => removeJobCard(job.id)}
+                      disabled={jobCards.length <= 1 || isSubmitting}
+                      aria-label={`공고 ${index + 1} 삭제`}
+                    >
                       ×
                     </button>
                   </div>
-                  <div className="field" style={{ marginBottom: '12px' }}>
-                    <label>회사명 / 공고명</label>
-                    <input placeholder="예: 토스 AI Engineer" />
+                  <div className="job-card-grid">
+                    <div className="field">
+                      <label>회사명</label>
+                      <input
+                        placeholder="예: 토스"
+                        value={job.companyName}
+                        onChange={(event) => updateJobCard(job.id, 'companyName', event.target.value)}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                    <div className="field">
+                      <label>직무명</label>
+                      <input
+                        placeholder="예: Backend Engineer"
+                        value={job.position}
+                        onChange={(event) => updateJobCard(job.id, 'position', event.target.value)}
+                        disabled={isSubmitting}
+                      />
+                    </div>
                   </div>
                   <div className="field">
-                    <label>채용공고 내용 또는 URL</label>
+                    <label>채용공고 내용</label>
                     <textarea
                       rows="6"
-                      placeholder="채용공고 전문을 붙여넣거나 URL을 입력하세요.&#10;예: https://toss.im/career/...&#10;&#10;또는 공고 내용 전체를 그대로 붙여넣으세요."
+                      placeholder="채용공고 전문을 그대로 붙여넣으세요.&#10;&#10;주요업무, 자격요건, 우대사항이 포함될수록 더 정확하게 비교할 수 있습니다."
+                      value={job.content}
+                      onChange={(event) => updateJobCard(job.id, 'content', event.target.value)}
+                      disabled={isSubmitting}
                     ></textarea>
                   </div>
                 </div>
@@ -81,11 +139,21 @@ export default function Analyze() {
               className={`add-job-btn ${jobCards.length >= 3 ? 'disabled' : ''}`}
               id="add-job-btn"
               onClick={addJobCard}
-              disabled={jobCards.length >= 3}
+              disabled={jobCards.length >= 3 || isSubmitting}
             >
               <span style={{ fontSize: '20px' }}>＋</span>
               공고 추가 (최대 3개)
             </button>
+            {formMessage && (
+              <div className="diagnosis-message error">
+                <span>{formMessage}</span>
+                {needsProfile && (
+                  <button className="btn btn-ghost" onClick={() => navigate('/myinfo')}>
+                    내 정보 입력
+                  </button>
+                )}
+              </div>
+            )}
             <div className="run-btn-wrap">
               <div className="run-btn-info">
                 <strong>준비되셨나요?</strong>
@@ -102,28 +170,23 @@ export default function Analyze() {
             </div>
           </div>
 
-          {/* Sidebar */}
           <div className="diag-sidebar">
             <div className="diag-profile-card">
               <div className="diag-profile-header">
-                <div className="diag-profile-av">문</div>
+                <div className="diag-profile-av">{avatarText}</div>
                 <div>
-                  <div className="diag-profile-name">문석현</div>
-                  <div className="diag-profile-badge">신입 · 응용정보공학</div>
+                  <div className="diag-profile-name">{displayName}</div>
+                  <div className="diag-profile-badge">저장된 내 정보 기준</div>
                 </div>
               </div>
               <div className="profile-chips">
-                <span className="chip green">Python</span>
-                <span className="chip green">RAG / LangGraph</span>
-                <span className="chip green">Spring Boot</span>
-                <span className="chip green">FastAPI</span>
-                <span className="chip">PostgreSQL</span>
-                <span className="chip">Next.js</span>
-                <span className="chip">Docker</span>
-                <span className="chip">Vector Search</span>
+                <span className="chip green">학력</span>
+                <span className="chip green">경력</span>
+                <span className="chip green">프로젝트</span>
+                <span className="chip">성과</span>
               </div>
               <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', color: 'var(--muted)' }}>내 정보 불러옴</span>
+                <span style={{ fontSize: '12px', color: 'var(--muted)' }}>내 정보 기반 분석</span>
                 <button className="btn btn-ghost" style={{ padding: '6px 14px', fontSize: '11px' }} onClick={() => navigate('/myinfo')}>
                   수정
                 </button>
@@ -131,12 +194,12 @@ export default function Analyze() {
             </div>
             <div className="diag-tip">
               <strong>TIP</strong>
-              공고 전문을 붙여넣을수록 더 정확한 분석이 가능합니다. URL 입력도 지원합니다.
+              공고 전문을 붙여넣을수록 더 정확한 분석이 가능합니다. 주요업무, 자격요건, 우대사항을 함께 입력하세요.
             </div>
           </div>
         </div>
       </div>
-      <AnalysisLoadingOverlay show={isSubmitting} />
+      <AnalysisLoadingOverlay show={isSubmitting} message="진단 요청 중..." />
     </>
   );
 }
