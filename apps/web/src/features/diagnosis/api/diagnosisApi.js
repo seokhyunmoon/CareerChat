@@ -6,3 +6,7 @@ export function createDiagnosis(request) {
     body: request,
   });
 }
+
+export function getDiagnosis(diagnosisId) {
+  return apiRequest(`/diagnoses/${diagnosisId}`);
+}

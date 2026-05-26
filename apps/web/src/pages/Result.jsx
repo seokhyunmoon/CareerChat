@@ -1,10 +1,14 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import {
-  getDiagnosisById,
-  getLatestDiagnosis,
-} from '@/features/diagnosis/mockDiagnosisData';
+import { getDiagnosis } from '@/features/diagnosis/api/diagnosisApi';
 import AnalysisLoadingOverlay from '@/features/diagnosis/AnalysisLoadingOverlay';
+import {
+  isPollingStatus,
+  toDiagnosisViewModel,
+  toResultErrorViewModel,
+} from '@/features/diagnosis/utils/diagnosisResultMapper';
+
+const POLLING_INTERVAL_MS = 3000;
 
 const rankLabels = ['1st', '2nd', '3rd'];
 
@@ -38,13 +42,68 @@ function getBarClass(index) {
   return 'b3';
 }
 
+function ResultStatusMessage({ title, description, actionLabel, onAction }) {
+  const navigate = useNavigate();
+
+  return (
+    <div id="page-result" className="page active">
+      <div className="result-layout">
+        <div className="result-main">
+          <div className="result-hero failed-hero fade-up">
+            <div className="result-hero-top">
+              <div>
+                <div className="tag danger" style={{ marginBottom: '12px' }}>확인 필요</div>
+                <div className="result-title">
+                  진단 결과를
+                  <br />
+                  확인할 수 없습니다
+                </div>
+                <div className="result-meta">진단 상태 조회</div>
+              </div>
+              <div className="result-tag danger">안내</div>
+            </div>
+            <div className="failure-box">
+              <div className="failure-title">{title}</div>
+              <div className="failure-desc">{description}</div>
+            </div>
+          </div>
+          <div className="result-actions">
+            <button className="btn btn-primary" onClick={onAction}>
+              {actionLabel}
+            </button>
+            <button className="btn btn-outline" onClick={() => navigate('/analyze')}>
+              새 진단 시작하기
+            </button>
+          </div>
+        </div>
+
+        <div className="chat-panel status-panel">
+          <div className="chat-header">
+            <div className="chat-dot danger"></div>
+            <div>
+              <div className="chat-title">안내</div>
+              <div className="chat-subtitle">진단 상태 확인</div>
+            </div>
+          </div>
+          <div className="status-panel-body">
+            <div className="status-kicker">다음 행동</div>
+            <p>{description}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Result() {
   const navigate = useNavigate();
   const { diagnosisId } = useParams();
-  const diagnosis = getDiagnosisById(diagnosisId) ?? getLatestDiagnosis();
+  const [diagnosis, setDiagnosis] = useState(null);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const jobs = useMemo(
-    () => [...(diagnosis.jobs ?? [])].sort((a, b) => a.rankOrder - b.rankOrder),
-    [diagnosis.jobs]
+    () => [...(diagnosis?.jobs ?? [])].sort((a, b) => a.rankOrder - b.rankOrder),
+    [diagnosis?.jobs]
   );
   const [activeTab, setActiveTab] = useState(0);
   const [chatMessages, setChatMessages] = useState([
@@ -56,12 +115,69 @@ export default function Result() {
   ]);
   const [inputValue, setInputValue] = useState('');
 
-  const activeJob = jobs[activeTab] ?? jobs[0];
+  useEffect(() => {
+    let isActive = true;
+    let pollingTimerId = null;
+
+    const clearPollingTimer = () => {
+      if (pollingTimerId) {
+        window.clearTimeout(pollingTimerId);
+        pollingTimerId = null;
+      }
+    };
+
+    async function loadDiagnosis({ showInitialLoading = false } = {}) {
+      if (!diagnosisId) {
+        setLoadError(toResultErrorViewModel({ status: 404 }));
+        setIsInitialLoading(false);
+        return;
+      }
+
+      try {
+        if (showInitialLoading) {
+          setIsInitialLoading(true);
+        }
+
+        const response = await getDiagnosis(diagnosisId);
+
+        if (!isActive) return;
+
+        const nextDiagnosis = toDiagnosisViewModel(response);
+        setDiagnosis(nextDiagnosis);
+        setLoadError(null);
+        setIsInitialLoading(false);
+
+        clearPollingTimer();
+
+        if (isPollingStatus(nextDiagnosis.status)) {
+          pollingTimerId = window.setTimeout(() => {
+            loadDiagnosis();
+          }, POLLING_INTERVAL_MS);
+        }
+      } catch (error) {
+        if (!isActive) return;
+
+        clearPollingTimer();
+        setLoadError(toResultErrorViewModel(error));
+        setIsInitialLoading(false);
+      }
+    }
+
+    loadDiagnosis({ showInitialLoading: true });
+
+    return () => {
+      isActive = false;
+      clearPollingTimer();
+    };
+  }, [diagnosisId]);
+
+  const safeActiveTab = activeTab < jobs.length ? activeTab : 0;
+  const activeJob = jobs[safeActiveTab] ?? jobs[0];
   const topJob = jobs[0];
 
   const handleSendChat = (text) => {
     const messageText = text || inputValue.trim();
-    if (!messageText || diagnosis.status !== 'COMPLETED') return;
+    if (!messageText || diagnosis?.status !== 'COMPLETED') return;
 
     const time = new Date().toLocaleTimeString('ko-KR', {
       hour: '2-digit',
@@ -77,6 +193,40 @@ export default function Result() {
       setChatMessages((prev) => [...prev, { role: 'ai', text: reply, time }]);
     }, 700);
   };
+
+  if (isInitialLoading) {
+    return (
+      <AnalysisLoadingOverlay
+        show
+        message="진단 상태를 불러오고 있습니다."
+        steps={[
+          '진단 요청 확인 중',
+          '분석 상태 조회 중',
+          '결과 화면 준비 중',
+        ]}
+      />
+    );
+  }
+
+  if (loadError) {
+    return (
+      <ResultStatusMessage
+        {...loadError}
+        onAction={() => navigate(loadError.actionPath)}
+      />
+    );
+  }
+
+  if (!diagnosis) {
+    return (
+      <ResultStatusMessage
+        title="진단 상태를 확인할 수 없습니다."
+        description="잠시 후 다시 시도하거나 진단 기록에서 다시 열어 주세요."
+        actionLabel="진단 기록으로"
+        onAction={() => navigate('/history')}
+      />
+    );
+  }
 
   if (diagnosis.status === 'PROCESSING' || diagnosis.status === 'PENDING') {
     return (
@@ -189,7 +339,7 @@ export default function Result() {
             <div className="job-tabs">
               {jobs.map((job, index) => (
                 <button
-                  className={`job-tab ${activeTab === index ? 'active' : ''}`}
+                  className={`job-tab ${safeActiveTab === index ? 'active' : ''}`}
                   key={job.jdId}
                   onClick={() => setActiveTab(index)}
                 >
