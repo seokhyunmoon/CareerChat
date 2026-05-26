@@ -289,6 +289,17 @@ export default function Result() {
     );
   }
 
+  if (diagnosis.status === 'COMPLETED' && jobs.length === 0) {
+    return (
+      <ResultStatusMessage
+        title="완료된 결과가 비어 있습니다."
+        description="분석은 완료됐지만 공고별 결과가 응답에 포함되지 않았습니다. 다시 진단하거나 진단 기록에서 상태를 확인해 주세요."
+        actionLabel="진단 기록으로"
+        onAction={() => navigate('/history')}
+      />
+    );
+  }
+
   return (
     <div id="page-result" className="page active">
       <div className="result-layout">
@@ -332,7 +343,17 @@ export default function Result() {
             </div>
           </div>
 
-          <div className="card fade-up fade-up-d1">
+          <div className="card report-overview fade-up fade-up-d1">
+            <div className="tag" style={{ marginBottom: '12px' }}>분석 요약</div>
+            <div className="report-summary-title">
+              {diagnosis.reportSummary ?? '요약 결과가 아직 제공되지 않았습니다.'}
+            </div>
+            <p className="report-summary-content">
+              {diagnosis.reportContent ?? '상세 분석 본문이 아직 제공되지 않았습니다.'}
+            </p>
+          </div>
+
+          <div className="card fade-up fade-up-d2">
             <div style={{ marginBottom: '16px' }}>
               <div className="tag" style={{ marginBottom: '12px' }}>공고별 상세 분석</div>
             </div>
@@ -352,7 +373,7 @@ export default function Result() {
               <div className="detail-panel active">
                 <span className="sub-label">✅ 강점</span>
                 <div className="strength-list">
-                  {(activeJob.strengths ?? [activeJob.strengthsSummary]).map((strength) => (
+                  {activeJob.strengths.map((strength) => (
                     <div className="strength-item" key={strength}>
                       <div className="strength-icon">💪</div>
                       <div className="strength-text">{strength}</div>
@@ -362,7 +383,7 @@ export default function Result() {
 
                 <span className="sub-label">⚠️ 부족 역량 및 보완 방향</span>
                 <div className="gap-list">
-                  {(activeJob.gaps ?? [{ body: activeJob.gapsSummary }]).map((gap) => (
+                  {activeJob.gaps.map((gap) => (
                     <div className="strength-item" key={`${gap.title ?? ''}-${gap.body}`}>
                       <div className="strength-icon">📌</div>
                       <div className="strength-text">
@@ -376,9 +397,7 @@ export default function Result() {
 
                 <span className="sub-label">📝 이력서 강조 포인트</span>
                 <div className="highlight-cards">
-                  {(activeJob.highlightCards ?? [
-                    { title: '추천 서술 방향', body: activeJob.highlightPoints },
-                  ]).map((card) => (
+                  {activeJob.highlightCards.map((card) => (
                     <div className="highlight-card" key={card.title}>
                       <div className="highlight-card-title">{card.title}</div>
                       <div className="highlight-card-body">{card.body}</div>
@@ -389,19 +408,25 @@ export default function Result() {
                 <details className="evidence-details">
                   <summary>판단 근거 자세히 보기</summary>
                   <div className="requirement-list">
-                    {activeJob.requirementMatches.map((requirement) => (
-                      <div className="requirement-item" key={requirement.normalizedText}>
-                        <div className="requirement-head">
-                          <div className="requirement-title">{requirement.normalizedText}</div>
-                          <div className="requirement-badges">
-                            <span>{importanceLabels[requirement.importance] ?? requirement.importance}</span>
-                            <span>{matchLevelLabels[requirement.matchLevel] ?? requirement.matchLevel}</span>
+                    {activeJob.requirementMatches.length > 0 ? (
+                      activeJob.requirementMatches.map((requirement, index) => (
+                        <div className="requirement-item" key={`${requirement.normalizedText}-${index}`}>
+                          <div className="requirement-head">
+                            <div className="requirement-title">{requirement.normalizedText}</div>
+                            <div className="requirement-badges">
+                              <span>{importanceLabels[requirement.importance] ?? requirement.importance}</span>
+                              <span>{matchLevelLabels[requirement.matchLevel] ?? requirement.matchLevel}</span>
+                            </div>
                           </div>
+                          <div className="requirement-reason">{requirement.reason}</div>
+                          <div className="requirement-evidence">{requirement.evidence}</div>
                         </div>
-                        <div className="requirement-reason">{requirement.reason}</div>
-                        <div className="requirement-evidence">{requirement.evidence}</div>
+                      ))
+                    ) : (
+                      <div className="requirement-empty">
+                        요구사항별 판단 근거가 아직 제공되지 않았습니다.
                       </div>
-                    ))}
+                    )}
                   </div>
                 </details>
               </div>
@@ -432,7 +457,7 @@ export default function Result() {
           </div>
           <div className="chat-quick" style={{ display: chatMessages.length <= 1 ? 'flex' : 'none' }}>
             <button className="quick-btn" onClick={() => handleSendChat('어떤 공고를 먼저 지원할까?')}>지원 순서 추천</button>
-            <button className="quick-btn" onClick={() => handleSendChat('RAG 경험을 어떻게 강조할까?')}>RAG 강조 방법</button>
+            <button className="quick-btn" onClick={() => handleSendChat('강점을 어떻게 강조할까?')}>강점 강조 방법</button>
             <button className="quick-btn" onClick={() => handleSendChat('부족한 점은 뭐야?')}>보완점 보기</button>
           </div>
           <div className="chat-input-wrap">

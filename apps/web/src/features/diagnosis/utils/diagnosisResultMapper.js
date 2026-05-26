@@ -10,8 +10,15 @@ const MATCH_LEVEL_ALIASES = {
   MEDIUM: 'partial',
   LOW: 'weak',
   MISSING: 'none',
+  MATCHED: 'strong',
+  PARTIAL: 'partial',
+  WEAK: 'weak',
   NONE: 'none',
 };
+
+const DEFAULT_STRENGTH = '아직 강점 요약이 제공되지 않았습니다.';
+const DEFAULT_GAP = '아직 보완점 요약이 제공되지 않았습니다.';
+const DEFAULT_HIGHLIGHT = '강점과 보완점을 바탕으로 이력서 핵심 경험을 정리해 주세요.';
 
 export function isPollingStatus(status) {
   return POLLING_STATUSES.has(status);
@@ -79,13 +86,19 @@ export function toResultErrorViewModel(error) {
 function toJobViewModel(job) {
   const matchDetails = normalizeMatchDetails(job.matchDetails);
   const highlightPoints = parseListLikeValue(job.highlightPoints);
+  const strengthsSummary = normalizeText(job.strengthsSummary, DEFAULT_STRENGTH);
+  const gapsSummary = normalizeText(job.gapsSummary, DEFAULT_GAP);
 
   return {
     ...job,
     rankOrder: job.rankOrder ?? job.displayOrder,
     fitScore: toScore(job.fitScore),
-    highlightPoints: highlightPoints.join(', ') || job.highlightPoints,
-    highlightCards: highlightPoints.map((point, index) => ({
+    strengthsSummary,
+    gapsSummary,
+    strengths: [strengthsSummary],
+    gaps: [{ body: gapsSummary }],
+    highlightPoints: highlightPoints.join(', ') || DEFAULT_HIGHLIGHT,
+    highlightCards: (highlightPoints.length > 0 ? highlightPoints : [DEFAULT_HIGHLIGHT]).map((point, index) => ({
       title: `강조 포인트 ${index + 1}`,
       body: point,
     })),
@@ -94,21 +107,45 @@ function toJobViewModel(job) {
 }
 
 function normalizeMatchDetails(matchDetails) {
-  const requirements = Array.isArray(matchDetails?.requirements)
-    ? matchDetails.requirements
-    : [];
+  const parsedMatchDetails = parseJsonLikeValue(matchDetails);
+  const requirements = getRequirementItems(parsedMatchDetails);
 
   return requirements.map((requirement) => ({
     normalizedText:
+      requirement.requirement?.description ??
       requirement.normalizedText ??
       requirement.name ??
       requirement.description ??
       '요구사항',
-    importance: normalizeImportance(requirement.importance),
-    matchLevel: normalizeMatchLevel(requirement.matchLevel ?? requirement.match),
-    reason: requirement.reason ?? '분석 결과에 포함된 판단 근거입니다.',
+    importance: normalizeImportance(
+      requirement.importance ?? requirement.priority ?? requirement.requirement?.priority
+    ),
+    matchLevel: normalizeMatchLevel(
+      requirement.matchLevel ?? requirement.match ?? requirement.status
+    ),
+    reason:
+      requirement.reason ??
+      requirement.rationale ??
+      requirement.gap ??
+      '분석 결과에 포함된 판단 근거입니다.',
     evidence: formatEvidence(requirement.evidence),
   }));
+}
+
+function getRequirementItems(matchDetails) {
+  if (Array.isArray(matchDetails)) {
+    return matchDetails;
+  }
+
+  if (Array.isArray(matchDetails?.requirements)) {
+    return matchDetails.requirements;
+  }
+
+  if (Array.isArray(matchDetails?.requirementMatches)) {
+    return matchDetails.requirementMatches;
+  }
+
+  return [];
 }
 
 function normalizeImportance(importance) {
@@ -127,7 +164,18 @@ function normalizeMatchLevel(matchLevel) {
 function formatEvidence(evidence) {
   if (Array.isArray(evidence)) {
     const evidenceText = evidence
-      .map((item) => item?.text ?? item?.summary ?? item?.title ?? item)
+      .map((item) => {
+        const evidenceItem = item?.evidence ?? item;
+
+        return (
+          item?.rationale ??
+          evidenceItem?.text ??
+          evidenceItem?.summary ??
+          evidenceItem?.title ??
+          evidenceItem?.sourceType ??
+          null
+        );
+      })
       .filter(Boolean)
       .join(' / ');
 
@@ -142,6 +190,12 @@ function formatEvidence(evidence) {
 }
 
 function parseListLikeValue(value) {
+  const parsedValue = parseJsonLikeValue(value);
+
+  if (Array.isArray(parsedValue)) {
+    return parsedValue.map(String).filter(Boolean);
+  }
+
   if (Array.isArray(value)) {
     return value.map(String).filter(Boolean);
   }
@@ -150,17 +204,19 @@ function parseListLikeValue(value) {
     return [];
   }
 
-  try {
-    const parsed = JSON.parse(value);
+  return [value];
+}
 
-    if (Array.isArray(parsed)) {
-      return parsed.map(String).filter(Boolean);
-    }
-  } catch {
-    return [value];
+function parseJsonLikeValue(value) {
+  if (typeof value !== 'string' || !value.trim()) {
+    return value;
   }
 
-  return [value];
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
 }
 
 function toScore(value) {
@@ -197,4 +253,12 @@ function getRecoveryHint(errorCode) {
   }
 
   return '잠시 후 같은 공고로 다시 시도하거나, 공고 원문을 조금 줄여 다시 진단을 시작해 주세요.';
+}
+
+function normalizeText(value, fallback) {
+  if (typeof value === 'string' && value.trim()) {
+    return value;
+  }
+
+  return fallback;
 }

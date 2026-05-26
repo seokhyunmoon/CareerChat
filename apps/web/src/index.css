@@ -865,6 +865,22 @@ section { padding-top: 100px; }
   font-size: 13px;
   line-height: 1.7;
 }
+.report-overview {
+  margin-bottom: 20px;
+}
+.report-summary-title {
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.report-summary-content {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.8;
+  margin: 0;
+}
 
 /* ranking */
 .ranking-list { display: flex; flex-direction: column; gap: 10px; }
@@ -1044,6 +1060,12 @@ section { padding-top: 100px; }
   font-size: 12px;
   line-height: 1.6;
   padding-left: 12px;
+}
+.requirement-empty {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 8px 0;
 }
 
 /* Chatbot sidebar */
