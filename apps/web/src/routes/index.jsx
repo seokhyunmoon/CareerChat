@@ -17,8 +17,14 @@ export const router = createBrowserRouter([
     errorElement: <NotFound />,
     children: [
       { index: true, element: <Home /> },
-      { path: 'result', element: <Navigate to="/result/1001" replace /> },
-      { path: 'result/:diagnosisId', element: <Result /> },
+      {
+        path: 'result',
+        element: <RequireAuth><Navigate to="/history" replace /></RequireAuth>,
+      },
+      {
+        path: 'result/:diagnosisId',
+        element: <RequireAuth><Result /></RequireAuth>,
+      },
       { path: 'myinfo', element: <RequireAuth><MyInfo /></RequireAuth> },
       { path: 'analyze', element: <RequireAuth><Analyze /></RequireAuth> },
       { path: 'history', element: <RequireAuth><History /></RequireAuth> },
