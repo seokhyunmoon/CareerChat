@@ -15,10 +15,12 @@ import com.careerchat.backend.diagnosis.ai.dto.AiProfileSnapshot;
 import com.careerchat.backend.diagnosis.domain.Diagnosis;
 import com.careerchat.backend.diagnosis.domain.DiagnosisStatus;
 import com.careerchat.backend.diagnosis.domain.JDResult;
+import com.careerchat.backend.global.config.JacksonConfig;
 import com.careerchat.backend.profile.domain.ExperienceLevel;
 import com.careerchat.backend.profile.domain.Profile;
 import com.careerchat.backend.user.domain.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,7 +38,7 @@ class AiAnalysisJobStarterTest {
         profileSnapshotFactory = mock(ProfileSnapshotFactory.class);
         aiAnalysisClient = mock(AiAnalysisClient.class);
         AiAnalysisJobRequestFactory requestFactory = new AiAnalysisJobRequestFactory(new AiBackendProperties());
-        ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
+        ObjectMapper objectMapper = new JacksonConfig().objectMapper();
         starter = new AiAnalysisJobStarter(
                 profileSnapshotFactory,
                 requestFactory,
@@ -69,7 +71,12 @@ class AiAnalysisJobStarterTest {
         assertThat(request.callback().failUrl()).endsWith("/internal/ai/diagnoses/100/fail");
         assertThat(diagnosis.getStatus()).isEqualTo(DiagnosisStatus.PROCESSING);
         assertThat(diagnosis.getAiTaskId()).isEqualTo("task-123");
-        assertThat(diagnosis.getProfileSnapshot()).contains("\"snapshotVersion\":1", "\"profileId\":10");
+        assertThat(diagnosis.getProfileSnapshot()).contains(
+                "\"snapshotVersion\":1",
+                "\"profileId\":10",
+                "\"startDate\":\"2019-09-01\"",
+                "\"acquiredDate\":\"2026-03-01\""
+        );
         assertThat(diagnosis.getAnalysisStartedAt()).isNotNull();
     }
 
@@ -111,10 +118,36 @@ class AiAnalysisJobStarterTest {
         return new AiProfileSnapshot(
                 1,
                 new AiProfileSnapshot.SnapshotProfile(10L, "NEW"),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of()
+                List.of(new AiProfileSnapshot.EducationSnapshot(
+                        1L,
+                        "연세대학교",
+                        "ENROLLED",
+                        "학사",
+                        "응용정보공학전공",
+                        LocalDate.of(2019, 9, 1),
+                        null
+                )),
+                List.of(new AiProfileSnapshot.WorkExperienceSnapshot(
+                        2L,
+                        "A*STAR IHPC",
+                        "INTERN",
+                        "AI Research",
+                        LocalDate.of(2025, 9, 1),
+                        LocalDate.of(2025, 12, 1),
+                        "RAG 시스템 개발"
+                )),
+                List.of(new AiProfileSnapshot.ProjectSnapshot(
+                        3L,
+                        "CareerChat",
+                        "채용공고 비교 분석 서비스"
+                )),
+                List.of(new AiProfileSnapshot.AchievementSnapshot(
+                        4L,
+                        "OPIc",
+                        "ACTFL",
+                        "IH",
+                        LocalDate.of(2026, 3, 1)
+                ))
         );
     }
 }
