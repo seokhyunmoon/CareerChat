@@ -10,3 +10,7 @@ export function createDiagnosis(request) {
 export function getDiagnosis(diagnosisId) {
   return apiRequest(`/diagnoses/${diagnosisId}`);
 }
+
+export function getDiagnoses() {
+  return apiRequest('/diagnoses');
+}
