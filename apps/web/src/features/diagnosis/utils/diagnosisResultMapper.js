@@ -1,3 +1,5 @@
+import { toDiagnosisFailureViewModel } from './diagnosisFailureMessages';
+
 export const POLLING_STATUSES = new Set(['PENDING', 'PROCESSING']);
 
 const STATUS_LOADING_MESSAGES = {
@@ -27,6 +29,7 @@ export function isPollingStatus(status) {
 export function toDiagnosisViewModel(diagnosis) {
   const jobs = (diagnosis.jobs ?? []).map(toJobViewModel);
   const jobCount = jobs.length;
+  const failure = toDiagnosisFailureViewModel(diagnosis.errorCode);
 
   return {
     ...diagnosis,
@@ -40,10 +43,10 @@ export function toDiagnosisViewModel(diagnosis) {
     meta: jobCount > 0 ? `공고 ${jobCount}개 비교` : '공고 정보 없음',
     loadingMessage:
       STATUS_LOADING_MESSAGES[diagnosis.status] ?? 'AI 분석 상태를 확인하고 있습니다.',
-    errorMessage:
-      diagnosis.errorMessage ??
-      '일시적인 처리 지연으로 분석을 완료하지 못했습니다.',
-    recoveryHint: getRecoveryHint(diagnosis.errorCode),
+    failure,
+    errorMessage: failure.title,
+    recoveryHint: failure.description,
+    failureNextAction: failure.nextAction,
   };
 }
 
@@ -241,18 +244,6 @@ function formatDateTime(value) {
     `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`,
     `${pad(date.getHours())}:${pad(date.getMinutes())}`,
   ].join(' ');
-}
-
-function getRecoveryHint(errorCode) {
-  if (errorCode === 'PROFILE_SNAPSHOT_INVALID') {
-    return '내 정보가 충분히 저장되어 있는지 확인한 뒤 다시 진단해 주세요.';
-  }
-
-  if (errorCode === 'INVALID_INPUT') {
-    return '공고 회사명, 포지션, 원문 내용을 확인한 뒤 다시 진단해 주세요.';
-  }
-
-  return '잠시 후 같은 공고로 다시 시도하거나, 공고 원문을 조금 줄여 다시 진단을 시작해 주세요.';
 }
 
 function normalizeText(value, fallback) {

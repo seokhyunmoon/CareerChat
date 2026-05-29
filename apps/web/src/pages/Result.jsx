@@ -238,6 +238,12 @@ export default function Result() {
   }
 
   if (diagnosis.status === 'FAILED') {
+    const failure = diagnosis.failure ?? {
+      title: '분석을 완료하지 못했습니다.',
+      description: '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
+      nextAction: '같은 공고로 다시 시도하거나 진단 기록에서 상태를 확인해 주세요.',
+    };
+
     return (
       <div id="page-result" className="page active">
         <div className="result-layout">
@@ -258,8 +264,8 @@ export default function Result() {
                 <div className="result-tag danger">다시 시도 가능</div>
               </div>
               <div className="failure-box">
-                <div className="failure-title">{diagnosis.errorMessage}</div>
-                <div className="failure-desc">{diagnosis.recoveryHint}</div>
+                <div className="failure-title">{failure.title}</div>
+                <div className="failure-desc">{failure.description}</div>
               </div>
             </div>
             <div className="result-actions">
@@ -278,10 +284,7 @@ export default function Result() {
             </div>
             <div className="status-panel-body">
               <div className="status-kicker">다음 행동</div>
-              <p>
-                일시적인 오류가 발생했을 수 있습니다. 같은 공고로 다시 시도하거나,
-                공고 원문을 조금 줄여 다시 진단을 시작해 주세요.
-              </p>
+              <p>{failure.nextAction}</p>
             </div>
           </div>
         </div>

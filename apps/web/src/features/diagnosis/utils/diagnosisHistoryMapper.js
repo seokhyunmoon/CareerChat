@@ -1,3 +1,5 @@
+import { toDiagnosisFailureViewModel } from './diagnosisFailureMessages';
+
 export const diagnosisStatusLabels = {
   PENDING: '접수됨',
   PROCESSING: '분석 중',
@@ -32,6 +34,7 @@ function toDiagnosisHistoryItem(diagnosis) {
   const companies = Array.isArray(diagnosis.companies) ? diagnosis.companies : [];
   const companiesText = companies.filter(Boolean).join(' · ');
   const status = diagnosis.status ?? 'PENDING';
+  const failure = toDiagnosisFailureViewModel(diagnosis.errorCode);
 
   return {
     diagnosisId: diagnosis.diagnosisId,
@@ -50,7 +53,7 @@ function toDiagnosisHistoryItem(diagnosis) {
       '공고 정보 없음',
     scoreText: getScoreText(diagnosis),
     scoreLabel: getScoreLabel(status),
-    errorMessage: diagnosis.errorMessage,
+    errorMessage: status === 'FAILED' ? failure.title : null,
   };
 }
 
