@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { getProfile, saveProfile as saveProfileApi } from '@/features/profile/api/profileApi';
 import {
@@ -15,6 +15,10 @@ import {
   validateYearMonth,
 } from '@/features/profile/utils/profileFormValidation';
 
+function createProfileSnapshot(state) {
+  return JSON.stringify(buildProfileRequest(state));
+}
+
 export default function MyInfo() {
   const navigate = useNavigate();
   const { user } = useOutletContext();
@@ -28,11 +32,13 @@ export default function MyInfo() {
   const [isSaving, setIsSaving] = useState(false);
   const [profileError, setProfileError] = useState('');
   const [saveMessage, setSaveMessage] = useState('');
+  const [savedProfileSnapshot, setSavedProfileSnapshot] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState('');
   const [currentEntry, setCurrentEntry] = useState(null);
   const [formData, setFormData] = useState({});
   const dateLimit = getCurrentDateLimit();
+  const monthInputMax = `${dateLimit.year}-${String(dateLimit.month).padStart(2, '0')}`;
 
   useEffect(() => {
     let ignore = false;
@@ -51,6 +57,7 @@ export default function MyInfo() {
           setCareerList(nextProfileState.careerList);
           setProjectList(nextProfileState.projectList);
           setOptionalList(nextProfileState.optionalList);
+          setSavedProfileSnapshot(createProfileSnapshot(nextProfileState));
         }
       } catch (error) {
         if (ignore) {
@@ -64,6 +71,7 @@ export default function MyInfo() {
           setCareerList(emptyProfileState.careerList);
           setProjectList(emptyProfileState.projectList);
           setOptionalList(emptyProfileState.optionalList);
+          setSavedProfileSnapshot(createProfileSnapshot(emptyProfileState));
           return;
         }
 
@@ -96,6 +104,10 @@ export default function MyInfo() {
     setProfileError('');
     setSaveMessage('');
 
+    if (!hasUnsavedChanges) {
+      return;
+    }
+
     const validationMessage = validateProfileForm(educationList, careerList, projectList);
     if (validationMessage) {
       setProfileError(validationMessage);
@@ -119,6 +131,7 @@ export default function MyInfo() {
       setCareerList(nextProfileState.careerList);
       setProjectList(nextProfileState.projectList);
       setOptionalList(nextProfileState.optionalList);
+      setSavedProfileSnapshot(createProfileSnapshot(nextProfileState));
       setSaveMessage('내 정보가 저장되었습니다.');
     } catch (error) {
       setProfileError(error.message ?? '내 정보를 저장하지 못했습니다.');
@@ -146,11 +159,25 @@ export default function MyInfo() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const years = Array.from({ length: dateLimit.year - 1900 + 1 }, (_, i) => dateLimit.year - i);
-  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  const getYearMonthValue = (year, month) => {
+    if (!year || !month) {
+      return '';
+    }
 
-  const validateDate = (year, month) => {
-    return validateYearMonth(year, month, dateLimit);
+    return `${year}-${String(month).padStart(2, '0')}`;
+  };
+
+  const handleYearMonthChange = (yearField, monthField) => (e) => {
+    const [year = '', month = ''] = e.target.value.split('-');
+    setFormData((prev) => ({
+      ...prev,
+      [yearField]: year,
+      [monthField]: month ? String(Number(month)) : '',
+    }));
+  };
+
+  const validateDate = (year, month, options = {}) => {
+    return validateYearMonth(year, month, dateLimit, options);
   };
 
   const getNextEntryId = (type) => {
@@ -169,7 +196,9 @@ export default function MyInfo() {
     e.preventDefault();
 
     if (modalType === 'edu' || modalType === 'career') {
-      if (!validateDate(formData.startYear, formData.startMonth) || !validateDate(formData.endYear, formData.endMonth)) {
+      const allowFutureEndDate = modalType === 'edu' && formData.gradStatus === 'EXPECTED';
+
+      if (!validateDate(formData.startYear, formData.startMonth) || !validateDate(formData.endYear, formData.endMonth, { allowFuture: allowFutureEndDate })) {
         alert(`날짜가 올바르지 않습니다 (${dateLimit.year}년 ${dateLimit.month}월까지만 선택 가능).`);
         return;
       }
@@ -235,6 +264,15 @@ export default function MyInfo() {
   const displayEmail = user?.email ?? '';
   const avatarText = displayName.trim().charAt(0) || '?';
   const statusMessage = profileError || saveMessage || (isProfileLoading ? '프로필을 불러오는 중입니다.' : '변경사항은 자동 저장되지 않습니다');
+  const currentProfileSnapshot = useMemo(() => createProfileSnapshot({
+    jobType,
+    educationList,
+    careerList,
+    projectList,
+    optionalList,
+  }), [jobType, educationList, careerList, projectList, optionalList]);
+  const hasUnsavedChanges = !isProfileLoading && savedProfileSnapshot !== '' && currentProfileSnapshot !== savedProfileSnapshot;
+  const saveButtonTitle = hasUnsavedChanges ? '변경사항을 저장합니다' : '변경 사항이 없습니다';
 
   return (
     <div id="page-profile" className="page active">
@@ -265,11 +303,6 @@ export default function MyInfo() {
         </div>
 
         <div className="profile-main">
-          <div className="profile-section-header">
-            <div className="profile-section-title">내 정보 관리</div>
-            <div className="profile-required">* 필수 항목</div>
-          </div>
-
           {(profileError || saveMessage || isProfileLoading) && (
             <div className={`profile-message ${profileError ? 'error' : saveMessage ? 'success' : ''}`}>
               {statusMessage}
@@ -402,7 +435,7 @@ export default function MyInfo() {
 
       {isModalOpen && (
         <div className="modal-overlay show" onClick={(e) => e.target === e.currentTarget && closeModal()}>
-          <div className="modal">
+          <div className={`modal ${modalType === 'career' || modalType === 'project' ? 'modal-wide' : ''}`}>
             <form onSubmit={saveEntry}>
               {modalType === 'edu' && (
                 <>
@@ -411,11 +444,11 @@ export default function MyInfo() {
                   <div className="form-grid" style={{ gap: '14px' }}>
                     <div className="field span-2">
                       <label>학교명 *</label>
-                      <input name="school" placeholder="한국대학교" value={formData.school || ''} onChange={handleInputChange} required />
+                      <input name="school" placeholder="연세대학교" value={formData.school || ''} onChange={handleInputChange} required />
                     </div>
-                    <div className="field">
+                    <div className="field span-2">
                       <label>전공 *</label>
-                      <input name="major" placeholder="컴퓨터공학과" value={formData.major || ''} onChange={handleInputChange} required />
+                      <input name="major" placeholder="응용정보공학전공" value={formData.major || ''} onChange={handleInputChange} required />
                     </div>
                     <div className="field">
                       <label>학위</label>
@@ -436,32 +469,12 @@ export default function MyInfo() {
                       </select>
                     </div>
                     <div className="field">
-                      <label>입학 연도</label>
-                      <select name="startYear" value={formData.startYear || ''} onChange={handleInputChange}>
-                        <option value="">선택</option>
-                        {years.map((y) => <option key={y} value={y}>{y}년</option>)}
-                      </select>
+                      <label>입학 년월</label>
+                      <input type="month" value={getYearMonthValue(formData.startYear, formData.startMonth)} max={monthInputMax} onChange={handleYearMonthChange('startYear', 'startMonth')} />
                     </div>
                     <div className="field">
-                      <label>입학 월</label>
-                      <select name="startMonth" value={formData.startMonth || ''} onChange={handleInputChange}>
-                        <option value="">선택</option>
-                        {months.map((m) => <option key={m} value={m}>{m}월</option>)}
-                      </select>
-                    </div>
-                    <div className="field">
-                      <label>졸업 연도</label>
-                      <select name="endYear" value={formData.endYear || ''} onChange={handleInputChange}>
-                        <option value="">선택</option>
-                        {years.map((y) => <option key={y} value={y}>{y}년</option>)}
-                      </select>
-                    </div>
-                    <div className="field">
-                      <label>졸업 월</label>
-                      <select name="endMonth" value={formData.endMonth || ''} onChange={handleInputChange}>
-                        <option value="">선택</option>
-                        {months.map((m) => <option key={m} value={m}>{m}월</option>)}
-                      </select>
+                      <label>졸업 년월</label>
+                      <input type="month" value={getYearMonthValue(formData.endYear, formData.endMonth)} max={formData.gradStatus === 'EXPECTED' ? undefined : monthInputMax} onChange={handleYearMonthChange('endYear', 'endMonth')} />
                     </div>
                   </div>
                 </>
@@ -489,36 +502,16 @@ export default function MyInfo() {
                       <input name="position" placeholder="프론트엔드 개발자" value={formData.position || ''} onChange={handleInputChange} />
                     </div>
                     <div className="field">
-                      <label>입사 연도</label>
-                      <select name="startYear" value={formData.startYear || ''} onChange={handleInputChange}>
-                        <option value="">선택</option>
-                        {years.map((y) => <option key={y} value={y}>{y}년</option>)}
-                      </select>
+                      <label>입사 년월</label>
+                      <input type="month" value={getYearMonthValue(formData.startYear, formData.startMonth)} max={monthInputMax} onChange={handleYearMonthChange('startYear', 'startMonth')} />
                     </div>
                     <div className="field">
-                      <label>입사 월</label>
-                      <select name="startMonth" value={formData.startMonth || ''} onChange={handleInputChange}>
-                        <option value="">선택</option>
-                        {months.map((m) => <option key={m} value={m}>{m}월</option>)}
-                      </select>
-                    </div>
-                    <div className="field">
-                      <label>퇴사 연도</label>
-                      <select name="endYear" value={formData.endYear || ''} onChange={handleInputChange}>
-                        <option value="">선택</option>
-                        {years.map((y) => <option key={y} value={y}>{y}년</option>)}
-                      </select>
-                    </div>
-                    <div className="field">
-                      <label>퇴사 월</label>
-                      <select name="endMonth" value={formData.endMonth || ''} onChange={handleInputChange}>
-                        <option value="">선택</option>
-                        {months.map((m) => <option key={m} value={m}>{m}월</option>)}
-                      </select>
+                      <label>퇴사 년월</label>
+                      <input type="month" value={getYearMonthValue(formData.endYear, formData.endMonth)} max={monthInputMax} onChange={handleYearMonthChange('endYear', 'endMonth')} />
                     </div>
                     <div className="field span-2">
                       <label>주요 업무</label>
-                      <textarea name="description" rows="4" placeholder="담당 업무와 성과를 입력하세요." value={formData.description || ''} onChange={handleInputChange} />
+                      <textarea className="textarea-long" name="description" rows="8" placeholder="담당 업무와 성과를 입력하세요." value={formData.description || ''} onChange={handleInputChange} />
                     </div>
                   </div>
                 </>
@@ -534,7 +527,7 @@ export default function MyInfo() {
                     </div>
                     <div className="field span-2">
                       <label>프로젝트 설명 *</label>
-                      <textarea name="description" rows="4" placeholder="프로젝트 목표, 역할, 구현 내용을 입력하세요." value={formData.description || ''} onChange={handleInputChange} required />
+                      <textarea className="textarea-long" name="description" rows="10" placeholder="프로젝트 목표, 역할, 구현 내용을 입력하세요." value={formData.description || ''} onChange={handleInputChange} required />
                     </div>
                     <div className="field span-2">
                       <label>사용 기술</label>
@@ -545,7 +538,7 @@ export default function MyInfo() {
               )}
               {modalType === 'optional' && (
                 <>
-                  <div className="modal-title">어학/자격/수상 {currentEntry ? '수정' : '추가'}</div>
+                  <div className="modal-title">어학 / 자격 / 수상 {currentEntry ? '수정' : '추가'}</div>
                   <div className="modal-sub">선택 항목을 입력하세요.</div>
                   <div className="form-grid" style={{ gap: '14px' }}>
                     <div className="field span-2">
@@ -570,18 +563,8 @@ export default function MyInfo() {
                       <input name="scoreOrGrade" placeholder="IH / 900점 / 대상" value={formData.scoreOrGrade || ''} onChange={handleInputChange} />
                     </div>
                     <div className="field">
-                      <label>취득 연도</label>
-                      <select name="year" value={formData.year || ''} onChange={handleInputChange}>
-                        <option value="">선택</option>
-                        {years.map((y) => <option key={y} value={y}>{y}년</option>)}
-                      </select>
-                    </div>
-                    <div className="field">
-                      <label>취득 월</label>
-                      <select name="month" value={formData.month || ''} onChange={handleInputChange}>
-                        <option value="">선택</option>
-                        {months.map((m) => <option key={m} value={m}>{m}월</option>)}
-                      </select>
+                      <label>취득 년월</label>
+                      <input type="month" value={getYearMonthValue(formData.year, formData.month)} max={monthInputMax} onChange={handleYearMonthChange('year', 'month')} />
                     </div>
                   </div>
                 </>
@@ -602,7 +585,13 @@ export default function MyInfo() {
         <button className="btn btn-outline btn-ghost" onClick={() => navigate('/analyze')}>
           진단하기로 이동
         </button>
-        <button className="btn btn-primary" disabled={isProfileLoading || isSaving} onClick={saveProfile}>
+        <button
+          className={`btn save-submit ${hasUnsavedChanges ? 'btn-primary' : 'btn-muted'}`}
+          disabled={isProfileLoading || isSaving}
+          data-tooltip={hasUnsavedChanges ? undefined : '변경 사항이 없습니다'}
+          title={saveButtonTitle}
+          onClick={saveProfile}
+        >
           {isSaving ? '저장 중...' : '저장하기'}
         </button>
       </div>
