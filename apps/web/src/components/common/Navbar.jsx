@@ -68,8 +68,7 @@ export default function Navbar({ isLoggedIn, user, onLogout }) {
             </div>
           ) : (
             <div className="flex gap-2" id="nav-auth-btns">
-              <Link to="/login" className="nav-btn">로그인</Link>
-              <Link to="/login" className="nav-btn primary">시작하기</Link>
+              <Link to="/login" className="nav-btn primary">로그인</Link>
             </div>
           )}
         </div>
