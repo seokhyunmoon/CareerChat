@@ -12,6 +12,10 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const doLogin = async () => {
+    if (isSubmitting) {
+      return;
+    }
+
     setErrorMessage("");
     setIsSubmitting(true);
 
@@ -56,8 +60,13 @@ export default function Login() {
           </Link>
         </div>
 
-        {/* Login form */}
-        <div id="form-login">
+        <form
+          id="form-login"
+          onSubmit={(event) => {
+            event.preventDefault();
+            doLogin();
+          }}
+        >
           <div className="auth-form">
             <div className="field">
               <label>이메일</label>
@@ -82,10 +91,10 @@ export default function Login() {
             <div className={`form-error ${errorMessage ? "show" : ""}`} id="login-error">
               {errorMessage}
             </div>
-            <button 
-            className="btn btn-primary btn-full" 
-            onClick={doLogin}
-            disabled={isSubmitting}
+            <button
+              type="submit"
+              className="btn btn-primary btn-full"
+              disabled={isSubmitting}
             >
               {isSubmitting ? "로그인 중..." : "로그인"}
             </button>
@@ -101,7 +110,11 @@ export default function Login() {
               marginTop: "12px",
             }}
           >
-            <button className="btn-social">
+            <button
+              type="button"
+              className="btn-social"
+              onClick={() => alert("Google 로그인은 아직 준비 중입니다.")}
+            >
               <svg width="18" height="18" viewBox="0 0 18 18">
                 <path
                   fill="#4285F4"
@@ -122,14 +135,18 @@ export default function Login() {
               </svg>
               Google로 계속하기
             </button>
-            <button className="btn-social">
+            <button
+              type="button"
+              className="btn-social"
+              onClick={() => alert("Kakao 로그인은 아직 준비 중입니다.")}
+            >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="#3C1E1E">
                 <path d="M9 1.5C4.86 1.5 1.5 4.134 1.5 7.38c0 2.088 1.35 3.918 3.384 4.986L4.05 15.3c-.06.216.15.39.342.27l3.582-2.37c.33.042.666.066 1.026.066C12.906 13.266 16.5 10.632 16.5 7.38 16.5 4.134 13.14 1.5 9 1.5z" />
               </svg>
               Kakao로 계속하기
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
