@@ -1,52 +1,78 @@
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 export default function Navbar({ isLoggedIn, user, onLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
 
-  const getLinkStyle = (path) => {
-    const isActive = location.pathname === path;
-    return isActive 
-      ? { color: 'var(--green)', borderColor: 'rgba(74,222,128,0.2)' }
-      : {};
+  useEffect(() => {
+    const closeUserMenu = (event) => {
+      if (!userMenuRef.current?.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', closeUserMenu);
+    return () => document.removeEventListener('mousedown', closeUserMenu);
+  }, []);
+
+  const isActivePath = (path) => location.pathname === path;
+
+  const handleLogout = () => {
+    setIsUserMenuOpen(false);
+    onLogout();
   };
+
+  const displayName = user?.name || '사용자';
+  const avatarText = displayName.trim().charAt(0) || '?';
 
   return (
     <nav>
-      <div className="nav-logo" onClick={() => navigate('/')}>Career<span>Chat</span></div>
-      <div className="nav-links">
-        {isLoggedIn ? (
-          <>
-            <div className="nav-user show">
-              <div 
-                className="nav-profile-link" 
-                onClick={() => navigate('/myinfo')}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
-              >
-                <div 
-                  className="nav-avatar" 
-                  style={location.pathname === '/myinfo' ? { borderColor: 'var(--green)', background: 'var(--green-dim)' } : {}}
-                >
-                  {user?.name?.[0]}
-                </div>
-                <span 
-                  className="nav-name" 
-                  style={location.pathname === '/myinfo' ? { color: 'var(--text)', fontWeight: '600' } : {}}
-                >
-                  {user?.name}
-                </span>
-              </div>
-              <button className="nav-logout" onClick={onLogout}>로그아웃</button>
+      <div className="nav-inner">
+        <div className="nav-left">
+          <div className="nav-logo" onClick={() => navigate('/')}>Career<span>Chat</span></div>
+          {isLoggedIn && (
+            <div className="nav-main-links">
+              <Link to="/analyze" className={`nav-text-link ${isActivePath('/analyze') ? 'active' : ''}`}>이력서 진단</Link>
+              <Link to="/history" className={`nav-text-link ${isActivePath('/history') ? 'active' : ''}`}>진단 기록</Link>
             </div>
-            <Link to="/analyze" className="nav-btn" style={getLinkStyle('/analyze')}>진단하기</Link>
-            <Link to="/history" className="nav-btn" style={getLinkStyle('/history')}>진단 기록</Link>
-          </>
-        ) : (
-          <div className="flex gap-2" id="nav-auth-btns">
-            <Link to="/login" className="nav-btn">로그인</Link>
-            <Link to="/login" className="nav-btn primary">시작하기</Link>
-          </div>
-        )}
+          )}
+        </div>
+        <div className="nav-links">
+          {isLoggedIn ? (
+            <div className="nav-user" ref={userMenuRef}>
+              <button
+                type="button"
+                className={`nav-profile-trigger ${isUserMenuOpen ? 'open' : ''}`}
+                onClick={() => setIsUserMenuOpen((prev) => !prev)}
+                aria-expanded={isUserMenuOpen}
+                aria-haspopup="menu"
+              >
+                <div
+                  className="nav-avatar"
+                  data-active={isActivePath('/myinfo')}
+                >
+                  {avatarText}
+                </div>
+                <span className="nav-name">{displayName}</span>
+                <span className="nav-chevron">⌄</span>
+              </button>
+              {isUserMenuOpen && (
+                <div className="nav-user-menu" role="menu">
+                  <button type="button" role="menuitem" onClick={() => navigate('/myinfo')}>마이페이지</button>
+                  <button type="button" role="menuitem" className="danger" onClick={handleLogout}>로그아웃</button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex gap-2" id="nav-auth-btns">
+              <Link to="/login" className="nav-btn">로그인</Link>
+              <Link to="/login" className="nav-btn primary">시작하기</Link>
+            </div>
+          )}
+        </div>
       </div>
     </nav>
   );
