@@ -9,8 +9,12 @@ export function getCurrentDateLimit() {
   };
 }
 
-export function validateYearMonth(year, month, dateLimit) {
+export function validateYearMonth(year, month, dateLimit, options = {}) {
   if (!year || !month) {
+    return true;
+  }
+
+  if (options.allowFuture) {
     return true;
   }
 
