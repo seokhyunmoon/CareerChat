@@ -33,6 +33,7 @@ function toDiagnosisHistoryItem(diagnosis) {
   const dateParts = formatHistoryDateParts(diagnosis.createdAt);
   const companies = Array.isArray(diagnosis.companies) ? diagnosis.companies : [];
   const companiesText = companies.filter(Boolean).join(' · ');
+  const jobCount = Math.max(companies.filter(Boolean).length, Number(diagnosis.jobCount) || 0);
   const status = diagnosis.status ?? 'PENDING';
   const failure = toDiagnosisFailureViewModel(diagnosis.errorCode);
 
@@ -43,18 +44,41 @@ function toDiagnosisHistoryItem(diagnosis) {
     statusClass: String(status).toLowerCase(),
     dateParts,
     createdAtLabel: formatDateTime(diagnosis.createdAt),
-    companiesText:
-      companiesText ||
-      diagnosis.topCompanyName ||
-      '회사 정보 없음',
+    titleText: companiesText || diagnosis.topCompanyName || '회사 정보 없음',
+    companiesText: companiesText || diagnosis.topCompanyName || '회사 정보 없음',
     jobsSummary:
-      diagnosis.jobsSummary ||
-      diagnosis.topPosition ||
-      '공고 정보 없음',
+      getJobsSummaryText(diagnosis, jobCount),
     scoreText: getScoreText(diagnosis),
     scoreLabel: getScoreLabel(status),
+    summaryText: getSummaryText(diagnosis, status, failure),
+    actionLabel: status === 'COMPLETED' ? '결과 보기' : '상태 확인',
     errorMessage: status === 'FAILED' ? failure.title : null,
   };
+}
+
+function getJobsSummaryText(diagnosis, jobCount) {
+  if (jobCount > 1 && diagnosis.topPosition) {
+    return `${diagnosis.topPosition} 외 ${jobCount - 1}개`;
+  }
+
+  return diagnosis.jobsSummary || diagnosis.topPosition || '공고 정보 없음';
+}
+
+function getSummaryText(diagnosis, status, failure) {
+  if (status === 'COMPLETED') {
+    const score = getScoreText(diagnosis);
+    return score === '-' ? '분석이 완료되었습니다.' : `최고 적합도 ${score}`;
+  }
+
+  if (status === 'FAILED') {
+    return failure.title;
+  }
+
+  if (status === 'PROCESSING') {
+    return 'AI 분석이 진행 중입니다.';
+  }
+
+  return '진단 요청이 접수되었습니다.';
 }
 
 function getScoreText(diagnosis) {
@@ -91,6 +115,7 @@ function formatHistoryDateParts(value) {
   return {
     day: pad(date.getDate()),
     month: `${pad(date.getMonth() + 1)}월`,
+    monthYear: `${getEnglishMonth(date)} '${String(date.getFullYear()).slice(2)}`,
   };
 }
 
@@ -121,4 +146,8 @@ function parseDate(value) {
 
 function pad(number) {
   return String(number).padStart(2, '0');
+}
+
+function getEnglishMonth(date) {
+  return ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'][date.getMonth()];
 }
