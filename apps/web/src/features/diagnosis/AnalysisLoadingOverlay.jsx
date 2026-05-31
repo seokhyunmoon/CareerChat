@@ -1,13 +1,10 @@
 import React from 'react';
 
 const DEFAULT_STEPS = [
-  '공고 핵심 요소 추출 중',
-  '프로필 데이터 매핑 중',
-  '적합도 점수 계산 중',
-  '보완 방향 생성 중',
+  '공고 핵심 요소를 확인하고 있습니다.',
+  '저장된 내 정보와 비교하고 있습니다.',
+  '지원 전략과 보완 방향을 정리하고 있습니다.',
 ];
-
-const STEP_DELAYS = [600, 1400, 2200, 2900];
 
 export default function AnalysisLoadingOverlay({
   show,
@@ -23,12 +20,14 @@ export default function AnalysisLoadingOverlay({
       <div className="loading-bar-wrap">
         <div className="loading-bar"></div>
       </div>
+      <div className="loading-helper">
+        완료되면 자동으로 결과 화면으로 이동합니다.
+      </div>
       <div className="loading-steps">
-        {steps.map((step, index) => (
+        {steps.map((step) => (
           <div
             className="loading-step"
             key={step}
-            style={{ '--step-delay': `${STEP_DELAYS[index] ?? STEP_DELAYS[STEP_DELAYS.length - 1]}ms` }}
           >
             <span className="loading-step-marker"></span>
             {step}

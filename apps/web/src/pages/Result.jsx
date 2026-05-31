@@ -52,7 +52,7 @@ function ResultStatusMessage({ title, description, actionLabel, onAction }) {
           <div className="result-hero failed-hero fade-up">
             <div className="result-hero-top">
               <div>
-                <div className="tag danger" style={{ marginBottom: '12px' }}>확인 필요</div>
+                <div className="tag danger result-step-tag">STEP 4 / 4</div>
                 <div className="result-title">
                   진단 결과를
                   <br />
@@ -60,7 +60,7 @@ function ResultStatusMessage({ title, description, actionLabel, onAction }) {
                 </div>
                 <div className="result-meta">진단 상태 조회</div>
               </div>
-              <div className="result-tag danger">안내</div>
+              <div className="result-tag danger">확인 필요</div>
             </div>
             <div className="failure-box">
               <div className="failure-title">{title}</div>
@@ -251,7 +251,7 @@ export default function Result() {
             <div className="result-hero failed-hero fade-up">
               <div className="result-hero-top">
                 <div>
-                  <div className="tag danger" style={{ marginBottom: '12px' }}>분석 실패</div>
+                  <div className="tag danger result-step-tag">STEP 4 / 4</div>
                   <div className="result-title">
                     분석을 완료하지
                     <br />
@@ -261,7 +261,7 @@ export default function Result() {
                     요청일 {diagnosis.createdAt} · {diagnosis.meta}
                   </div>
                 </div>
-                <div className="result-tag danger">다시 시도 가능</div>
+                <div className="result-tag danger">분석 실패</div>
               </div>
               <div className="failure-box">
                 <div className="failure-title">{failure.title}</div>
@@ -295,8 +295,8 @@ export default function Result() {
   if (diagnosis.status === 'COMPLETED' && jobs.length === 0) {
     return (
       <ResultStatusMessage
-        title="완료된 결과가 비어 있습니다."
-        description="분석은 완료됐지만 공고별 결과가 응답에 포함되지 않았습니다. 다시 진단하거나 진단 기록에서 상태를 확인해 주세요."
+        title="결과 데이터가 누락되었습니다."
+        description="분석은 완료됐지만 화면에 표시할 공고별 결과가 응답에 포함되지 않았습니다. 진단 기록에서 다시 열어보거나 새 진단을 시작해 주세요."
         actionLabel="진단 기록으로"
         onAction={() => navigate('/history')}
       />
@@ -307,21 +307,20 @@ export default function Result() {
     <div id="page-result" className="page active">
       <div className="result-layout">
         <div className="result-main">
+          <div className="history-header">
+            <div className="tag" style={{ marginBottom: '12px' }}>STEP 4 / 4</div>
+            <div className="history-title">진단 결과 리포트</div>
+            <div className="history-sub">분석일 {diagnosis.completedAt} · {diagnosis.meta}</div>
+          </div>
           <div className="result-hero fade-up">
             <div className="result-hero-top">
-              <div>
-                <div className="tag" style={{ marginBottom: '12px' }}>분석 완료</div>
-                <div className="result-title">
-                  지원 우선순위
-                  <br />
-                  리포트
-                </div>
-                <div className="result-meta">
-                  분석일 {diagnosis.completedAt} · {diagnosis.meta}
-                </div>
+              <div className="result-tag">
+                <span className="pulse" aria-hidden="true"></span>
+                지원 우선순위 추천
               </div>
               <div className="result-tag">
-                <span className="pulse">●</span> 신선한 분석
+                <span className="pulse" aria-hidden="true"></span>
+                분석 완료
               </div>
             </div>
             <div className="ranking-list">
