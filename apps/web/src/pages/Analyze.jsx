@@ -88,7 +88,7 @@ export default function Analyze() {
           <div>
             <div className="jobs-header">
               <div>
-                <div className="tag" style={{ marginBottom: '12px' }}>STEP 2 / 2</div>
+                <div className="tag" style={{ marginBottom: '12px' }}>STEP 2 / 3</div>
                 <div className="jobs-title">채용공고 입력</div>
                 <div className="jobs-sub">비교하고 싶은 공고를 최대 3개까지 입력하세요.</div>
               </div>
