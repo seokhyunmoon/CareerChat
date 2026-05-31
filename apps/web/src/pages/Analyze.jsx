@@ -55,6 +55,14 @@ export default function Analyze() {
       return;
     }
 
+    const shouldRunAnalysis = window.confirm(
+      '입력한 공고와 저장된 내 정보를 기준으로 진단을 시작할까요?\n진단에는 약 30초 ~ 1분 정도 소요됩니다.',
+    );
+
+    if (!shouldRunAnalysis) {
+      return;
+    }
+
     setIsSubmitting(true);
     setFormMessage('');
     setNeedsProfile(false);
@@ -157,7 +165,7 @@ export default function Analyze() {
             <div className="run-btn-wrap">
               <div className="run-btn-info">
                 <strong>준비되셨나요?</strong>
-                내 정보와 입력한 공고를 AI가 분석합니다. 약 10-20초 소요됩니다.
+                내 정보와 입력한 공고를 AI가 분석합니다. 약 30초 ~ 1분 소요됩니다.
               </div>
               <button
                 className="btn btn-primary"
@@ -172,29 +180,31 @@ export default function Analyze() {
 
           <div className="diag-sidebar">
             <div className="diag-profile-card">
+              <div className="diag-card-title">분석 기준 프로필</div>
               <div className="diag-profile-header">
                 <div className="diag-profile-av">{avatarText}</div>
                 <div>
                   <div className="diag-profile-name">{displayName}</div>
-                  <div className="diag-profile-badge">저장된 내 정보 기준</div>
+                  <div className="diag-profile-badge">저장된 내 정보로 공고와 비교합니다.</div>
                 </div>
               </div>
+              <div className="diag-profile-label">포함 정보</div>
               <div className="profile-chips">
                 <span className="chip green">학력</span>
                 <span className="chip green">경력</span>
                 <span className="chip green">프로젝트</span>
-                <span className="chip">성과</span>
+                <span className="chip">어학/자격/수상</span>
               </div>
-              <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', color: 'var(--muted)' }}>내 정보 기반 분석</span>
-                <button className="btn btn-ghost" style={{ padding: '6px 14px', fontSize: '11px' }} onClick={() => navigate('/myinfo')}>
-                  수정
+              <div className="diag-profile-action">
+                <span>최근 저장된 정보를 기준으로 분석합니다.</span>
+                <button className="btn btn-ghost diag-profile-edit" onClick={() => navigate('/myinfo')}>
+                  내 정보 수정
                 </button>
               </div>
             </div>
             <div className="diag-tip">
               <strong>TIP</strong>
-              공고 전문을 붙여넣을수록 더 정확한 분석이 가능합니다. 주요업무, 자격요건, 우대사항을 함께 입력하세요.
+              공고의 주요 업무, 자격 요건, 우대 사항을 함께 입력하면 내 정보와 더 정확히 비교할 수 있습니다.
             </div>
           </div>
         </div>
