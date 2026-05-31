@@ -85,7 +85,7 @@ export default function History() {
     <div id="page-history" className="page active">
       <div className="history-layout">
         <div className="history-header">
-          <div className="tag" style={{ marginBottom: '12px' }}>STEP 3 / 3</div>
+          <div className="tag" style={{ marginBottom: '12px' }}>STEP 3 / 4</div>
           <div className="history-title">진단 기록</div>
           <div className="history-sub">과거에 진행한 비교 진단 결과를 다시 확인하세요.</div>
         </div>
