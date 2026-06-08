@@ -30,6 +30,7 @@ from app.schemas.analysis_result import (
     JobRequirement,
     MatchedProfileEvidence,
     RequirementMatch,
+    StructuredReportItem,
 )
 from app.schemas.metadata import AnalysisMetadata, AnalysisStepMetadata
 
@@ -364,6 +365,15 @@ def _apply_report_generation_output(
                     "gapsSummary": summary.gapsSummary or job.gapsSummary,
                     "highlightPoints": summary.highlightPoints
                     or job.highlightPoints,
+                    "strengths": summary.strengths or job.strengths,
+                    "relatedExperiences": (
+                        summary.relatedExperiences or job.relatedExperiences
+                    ),
+                    "gaps": summary.gaps or job.gaps,
+                    "resumeHighlights": (
+                        summary.resumeHighlights or job.resumeHighlights
+                    ),
+                    "strategyAdvice": summary.strategyAdvice or job.strategyAdvice,
                 }
             )
         )
@@ -452,6 +462,15 @@ def _build_job_result(
         strengthsSummary=_build_strengths_summary(draft.requirement_matches),
         gapsSummary=_build_gaps_summary(draft.requirement_matches),
         highlightPoints=_build_highlight_points(draft.requirement_matches),
+        strengths=_build_strength_items(draft.requirement_matches),
+        relatedExperiences=_build_related_experience_items(
+            draft.requirement_matches
+        ),
+        gaps=_build_gap_items(draft.requirement_matches),
+        resumeHighlights=_build_resume_highlight_items(
+            draft.requirement_matches
+        ),
+        strategyAdvice=_build_strategy_advice_items(draft.requirement_matches),
         requirementMatches=draft.requirement_matches,
     )
 
@@ -492,6 +511,190 @@ def _build_highlight_points(matches: list[RequirementMatch]) -> list[str]:
                 return highlights
 
     return highlights
+
+
+def _build_strength_items(matches: list[RequirementMatch]) -> list[StructuredReportItem]:
+    return [
+        StructuredReportItem(
+            title=match.requirement.description,
+            description=match.rationale
+            or "프로필 근거가 공고 요구사항과 직접 연결됩니다.",
+            evidence=_build_evidence_texts(match),
+            action="지원서에는 이 경험의 역할, 사용 기술, 결과를 함께 적어 강점으로 제시하세요.",
+            suggestedWording=_build_suggested_wording(
+                "강점",
+                match.requirement.description,
+            ),
+            requirementIds=[match.requirement.requirementId],
+            priority=match.requirement.priority,
+            status=match.status,
+        )
+        for match in matches
+        if match.status == "matched"
+    ][:5]
+
+
+def _build_related_experience_items(
+    matches: list[RequirementMatch],
+) -> list[StructuredReportItem]:
+    items = []
+    for match in matches:
+        if match.status == "missing":
+            continue
+        for evidence in match.evidence[:2]:
+            title = evidence.evidence.title or match.requirement.description
+            items.append(
+                StructuredReportItem(
+                    title=title,
+                    description=evidence.evidence.text,
+                    evidence=[evidence.evidence.text],
+                    action=(
+                        "이 경험이 어떤 요구사항을 뒷받침하는지 이력서 문장에 명시하세요."
+                    ),
+                    suggestedWording=None,
+                    requirementIds=[match.requirement.requirementId],
+                    priority=match.requirement.priority,
+                    status=match.status,
+                )
+            )
+            if len(items) >= 5:
+                return items
+
+    return items
+
+
+def _build_gap_items(matches: list[RequirementMatch]) -> list[StructuredReportItem]:
+    return [
+        StructuredReportItem(
+            title=match.requirement.description,
+            description=match.gap
+            or match.rationale
+            or "프로필 근거만으로는 해당 요구사항 충족 여부를 충분히 확인하기 어렵습니다.",
+            evidence=_build_evidence_texts(match),
+            action="관련 경험이 있다면 구체적 사례를 보강하고, 없다면 학습/프로젝트 계획을 별도 액션으로 잡으세요.",
+            suggestedWording=_build_suggested_wording(
+                "보완",
+                match.requirement.description,
+            ),
+            requirementIds=[match.requirement.requirementId],
+            priority=match.requirement.priority,
+            status=match.status,
+        )
+        for match in matches
+        if match.status in {"partial", "missing"}
+    ][:5]
+
+
+def _build_resume_highlight_items(
+    matches: list[RequirementMatch],
+) -> list[StructuredReportItem]:
+    items = []
+    seen_titles: set[str] = set()
+
+    for match in matches:
+        if match.status == "missing":
+            continue
+
+        title = _first_keyword(match) or match.requirement.description
+        if title in seen_titles:
+            continue
+        seen_titles.add(title)
+        items.append(
+            StructuredReportItem(
+                title=title,
+                description=match.requirement.description,
+                evidence=_build_evidence_texts(match),
+                action="이력서에서는 키워드만 쓰지 말고 문제, 구현 방식, 결과를 한 문장 안에 연결하세요.",
+                suggestedWording=_build_suggested_wording(
+                    "강조",
+                    match.requirement.description,
+                ),
+                requirementIds=[match.requirement.requirementId],
+                priority=match.requirement.priority,
+                status=match.status,
+            )
+        )
+        if len(items) >= 5:
+            return items
+
+    return items
+
+
+def _build_strategy_advice_items(
+    matches: list[RequirementMatch],
+) -> list[StructuredReportItem]:
+    required_gaps = [
+        match
+        for match in matches
+        if match.requirement.priority == "required"
+        and match.status in {"partial", "missing"}
+    ]
+    strengths = [match for match in matches if match.status == "matched"]
+    items = []
+
+    if required_gaps:
+        requirement_ids = [
+            match.requirement.requirementId
+            for match in required_gaps[:3]
+        ]
+        items.append(
+            StructuredReportItem(
+                title="필수 요구사항 보완 우선",
+                description=(
+                    "필수 요구사항에서 확인되지 않은 항목이 있어 지원 적합도에 큰 영향을 줍니다."
+                ),
+                evidence=[
+                    match.requirement.description
+                    for match in required_gaps[:3]
+                ],
+                action="지원 전 필수 요구사항별 경험 근거를 추가하거나, 자기소개서에서 보완 계획을 명확히 설명하세요.",
+                suggestedWording=None,
+                requirementIds=requirement_ids,
+                priority="required",
+                status="missing",
+            )
+        )
+
+    if strengths:
+        items.append(
+            StructuredReportItem(
+                title="확인된 강점은 상단에 배치",
+                description="공고 요구사항과 직접 연결되는 경험은 이력서 상단 요약과 프로젝트 설명에 먼저 배치하는 것이 좋습니다.",
+                evidence=[
+                    match.requirement.description
+                    for match in strengths[:3]
+                ],
+                action="강점 항목은 기술명보다 문제 해결 맥락과 결과 중심으로 정리하세요.",
+                suggestedWording=None,
+                requirementIds=[
+                    match.requirement.requirementId
+                    for match in strengths[:3]
+                ],
+                priority=None,
+                status="matched",
+            )
+        )
+
+    return items
+
+
+def _build_evidence_texts(match: RequirementMatch) -> list[str]:
+    return [
+        evidence.evidence.text
+        for evidence in match.evidence[:3]
+        if evidence.evidence.text.strip()
+    ]
+
+
+def _first_keyword(match: RequirementMatch) -> str | None:
+    return next(
+        (keyword for keyword in match.requirement.keywords if keyword.strip()),
+        None,
+    )
+
+
+def _build_suggested_wording(prefix: str, description: str) -> str:
+    return f"{prefix}: {description}와 직접 연결되는 경험을 구체적 사례와 결과 중심으로 제시"
 
 
 def _build_report_summary(job_results: list[JobAnalysisResult]) -> str:

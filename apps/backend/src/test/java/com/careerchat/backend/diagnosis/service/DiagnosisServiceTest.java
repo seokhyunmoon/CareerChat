@@ -417,6 +417,11 @@ class DiagnosisServiceTest {
         assertThat(jdResult.getStrengthsSummary()).isEqualTo("강점");
         assertThat(jdResult.getGapsSummary()).isEqualTo("부족");
         assertThat(jdResult.getHighlightPoints()).isEqualTo("강조");
+        assertThat(jdResult.getStrengths()).contains("Spring Boot");
+        assertThat(jdResult.getRelatedExperiences()).contains("CareerChat");
+        assertThat(jdResult.getGaps()).contains("운영 경험");
+        assertThat(jdResult.getResumeHighlights()).contains("REST API");
+        assertThat(jdResult.getStrategyAdvice()).contains("필수 요건 보완");
         assertThat(jdResult.getMatchDetails()).contains("Spring");
     }
 
@@ -565,6 +570,11 @@ class DiagnosisServiceTest {
                         "강점",
                         "부족",
                         "강조",
+                        "[{\"title\":\"Spring Boot\",\"description\":\"REST API 경험\",\"evidence\":[\"프로젝트 근거\"],\"action\":\"상단에 배치\",\"suggestedWording\":\"Spring Boot REST API 구현\",\"requirementIds\":[\"req-1\"],\"priority\":\"required\",\"status\":\"matched\"}]",
+                        "[{\"title\":\"CareerChat\",\"description\":\"관련 프로젝트\",\"evidence\":[\"프로젝트 근거\"],\"action\":\"요구사항과 연결\",\"suggestedWording\":null,\"requirementIds\":[\"req-1\"],\"priority\":\"required\",\"status\":\"matched\"}]",
+                        "[{\"title\":\"운영 경험\",\"description\":\"근거 부족\",\"evidence\":[],\"action\":\"운영 사례 보강\",\"suggestedWording\":\"운영 지표를 추가\",\"requirementIds\":[\"req-2\"],\"priority\":\"required\",\"status\":\"missing\"}]",
+                        "[{\"title\":\"REST API\",\"description\":\"강조 포인트\",\"evidence\":[\"프로젝트 근거\"],\"action\":\"문제와 결과 연결\",\"suggestedWording\":\"REST API 설계 및 구현\",\"requirementIds\":[\"req-1\"],\"priority\":\"required\",\"status\":\"matched\"}]",
+                        "[{\"title\":\"필수 요건 보완\",\"description\":\"운영 경험 보완 필요\",\"evidence\":[\"운영 경험\"],\"action\":\"사례 추가\",\"suggestedWording\":null,\"requirementIds\":[\"req-2\"],\"priority\":\"required\",\"status\":\"missing\"}]",
                         "{\"requirements\":[{\"name\":\"Spring\",\"match\":\"HIGH\"}]}"
                 ))
         );

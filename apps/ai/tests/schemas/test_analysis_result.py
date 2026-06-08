@@ -53,6 +53,30 @@ def test_analysis_report_package_serializes_nested_matching_result() -> None:
                 strengthsSummary="Spring Boot project experience is relevant.",
                 gapsSummary="Production traffic experience is limited.",
                 highlightPoints=["Spring Boot", "REST API"],
+                strengths=[
+                    {
+                        "title": "Spring Boot REST API",
+                        "description": "Project evidence directly supports the requirement.",
+                        "evidence": ["Implemented REST APIs with Spring Boot."],
+                        "action": "Place this project near the top of the resume.",
+                        "suggestedWording": "Built REST APIs with Spring Boot.",
+                        "requirementIds": ["req-1"],
+                        "priority": "required",
+                        "status": "matched",
+                    }
+                ],
+                resumeHighlights=[
+                    {
+                        "title": "REST API",
+                        "description": "A resume highlight backed by project evidence.",
+                        "evidence": ["Implemented REST APIs with Spring Boot."],
+                        "action": "Connect the implementation to the job requirement.",
+                        "suggestedWording": "Spring Boot REST API implementation.",
+                        "requirementIds": ["req-1"],
+                        "priority": "required",
+                        "status": "matched",
+                    }
+                ],
                 requirementMatches=[
                     RequirementMatch(
                         requirement=build_requirement(),
@@ -70,6 +94,8 @@ def test_analysis_report_package_serializes_nested_matching_result() -> None:
 
     assert payload["diagnosisId"] == 1
     assert payload["jobs"][0]["fitScore"] == 86.5
+    assert payload["jobs"][0]["strengths"][0]["title"] == "Spring Boot REST API"
+    assert payload["jobs"][0]["resumeHighlights"][0]["status"] == "matched"
     assert payload["jobs"][0]["requirementMatches"][0]["status"] == "matched"
     assert (
         payload["jobs"][0]["requirementMatches"][0]["evidence"][0]["evidence"][

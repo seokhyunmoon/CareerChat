@@ -94,6 +94,48 @@ def test_build_complete_callback_payload_serializes_highlight_points() -> None:
     ]
 
 
+def test_build_complete_callback_payload_serializes_structured_report_items() -> None:
+    task_payload = build_task_payload()
+    result = build_pipeline_result(task_payload)
+    structured_item = {
+        "title": "RAG 시스템 개발",
+        "description": "공고 요구사항과 연결되는 프로젝트 경험입니다.",
+        "evidence": ["RAG 기반 검색을 구현했습니다."],
+        "action": "프로젝트 역할과 결과를 함께 강조합니다.",
+        "suggestedWording": "RAG 검색 파이프라인 구현",
+        "requirementIds": ["jd-1-req-1"],
+        "priority": "required",
+        "status": "matched",
+    }
+    job_result = result.reportPackage.jobs[0].model_copy(
+        update={
+            "strengths": [structured_item],
+            "relatedExperiences": [structured_item],
+            "gaps": [structured_item | {"status": "partial"}],
+            "resumeHighlights": [structured_item],
+            "strategyAdvice": [structured_item],
+        }
+    )
+    report_package = result.reportPackage.model_copy(update={"jobs": [job_result]})
+    result = result.model_copy(update={"reportPackage": report_package})
+
+    callback_payload = build_complete_callback_payload(result=result)
+
+    assert json.loads(callback_payload.jobs[0].strengths or "[]")[0]["title"] == (
+        "RAG 시스템 개발"
+    )
+    assert json.loads(callback_payload.jobs[0].relatedExperiences or "[]")[0][
+        "action"
+    ] == "프로젝트 역할과 결과를 함께 강조합니다."
+    assert json.loads(callback_payload.jobs[0].gaps or "[]")[0]["status"] == "partial"
+    assert json.loads(callback_payload.jobs[0].resumeHighlights or "[]")[0][
+        "suggestedWording"
+    ] == "RAG 검색 파이프라인 구현"
+    assert json.loads(callback_payload.jobs[0].strategyAdvice or "[]")[0][
+        "requirementIds"
+    ] == ["jd-1-req-1"]
+
+
 def test_build_fail_callback_payload_returns_retryable_error_details() -> None:
     task_payload = build_task_payload()
 

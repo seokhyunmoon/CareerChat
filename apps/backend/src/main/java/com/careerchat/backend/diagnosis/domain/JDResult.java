@@ -72,6 +72,26 @@ public class JDResult extends BaseTimeEntity {
     @Column(name = "highlight_points", columnDefinition = "TEXT")
     private String highlightPoints;
 
+    @Column(name = "strengths", columnDefinition = "jsonb")
+    @ColumnTransformer(write = "?::jsonb")
+    private String strengths;
+
+    @Column(name = "related_experiences", columnDefinition = "jsonb")
+    @ColumnTransformer(write = "?::jsonb")
+    private String relatedExperiences;
+
+    @Column(name = "gaps", columnDefinition = "jsonb")
+    @ColumnTransformer(write = "?::jsonb")
+    private String gaps;
+
+    @Column(name = "resume_highlights", columnDefinition = "jsonb")
+    @ColumnTransformer(write = "?::jsonb")
+    private String resumeHighlights;
+
+    @Column(name = "strategy_advice", columnDefinition = "jsonb")
+    @ColumnTransformer(write = "?::jsonb")
+    private String strategyAdvice;
+
     @Column(name = "match_details", columnDefinition = "jsonb")
     @ColumnTransformer(write = "?::jsonb")
     private String matchDetails;
@@ -137,6 +157,26 @@ public class JDResult extends BaseTimeEntity {
         return highlightPoints;
     }
 
+    public String getStrengths() {
+        return strengths;
+    }
+
+    public String getRelatedExperiences() {
+        return relatedExperiences;
+    }
+
+    public String getGaps() {
+        return gaps;
+    }
+
+    public String getResumeHighlights() {
+        return resumeHighlights;
+    }
+
+    public String getStrategyAdvice() {
+        return strategyAdvice;
+    }
+
     public String getMatchDetails() {
         return matchDetails;
     }
@@ -154,6 +194,11 @@ public class JDResult extends BaseTimeEntity {
                 strengthsSummary,
                 gapsSummary,
                 highlightPoints,
+                null,
+                null,
+                null,
+                null,
+                null,
                 null
         );
     }
@@ -166,11 +211,44 @@ public class JDResult extends BaseTimeEntity {
             String highlightPoints,
             String matchDetails
     ) {
+        updateAnalysisResult(
+                rankOrder,
+                fitScore,
+                strengthsSummary,
+                gapsSummary,
+                highlightPoints,
+                null,
+                null,
+                null,
+                null,
+                null,
+                matchDetails
+        );
+    }
+
+    public void updateAnalysisResult(
+            Integer rankOrder,
+            BigDecimal fitScore,
+            String strengthsSummary,
+            String gapsSummary,
+            String highlightPoints,
+            String strengths,
+            String relatedExperiences,
+            String gaps,
+            String resumeHighlights,
+            String strategyAdvice,
+            String matchDetails
+    ) {
         this.rankOrder = rankOrder;
         this.fitScore = fitScore;
         this.strengthsSummary = strengthsSummary;
         this.gapsSummary = gapsSummary;
         this.highlightPoints = highlightPoints;
+        this.strengths = strengths;
+        this.relatedExperiences = relatedExperiences;
+        this.gaps = gaps;
+        this.resumeHighlights = resumeHighlights;
+        this.strategyAdvice = strategyAdvice;
         this.matchDetails = matchDetails;
     }
 }

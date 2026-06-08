@@ -127,6 +127,55 @@ def test_analysis_report_generator_uses_llm_provider_outputs() -> None:
                             "strengthsSummary": "LLM strengths",
                             "gapsSummary": "LLM gaps",
                             "highlightPoints": ["spring boot"],
+                            "strengths": [
+                                {
+                                    "title": "Spring Boot REST API",
+                                    "description": "프로젝트 근거가 요구사항과 직접 연결됩니다.",
+                                    "evidence": ["Spring Boot REST API를 구현했습니다."],
+                                    "action": "프로젝트 역할과 결과를 함께 강조합니다.",
+                                    "suggestedWording": "Spring Boot 기반 REST API 구현",
+                                    "requirementIds": ["jd-10-req-1"],
+                                    "priority": "required",
+                                    "status": "matched",
+                                }
+                            ],
+                            "relatedExperiences": [
+                                {
+                                    "title": "CareerChat",
+                                    "description": "프로젝트 경험이 공고 기술 요구사항과 연결됩니다.",
+                                    "evidence": ["Spring Boot REST API를 구현했습니다."],
+                                    "action": "프로젝트 설명에 요구사항 키워드를 연결합니다.",
+                                    "suggestedWording": None,
+                                    "requirementIds": ["jd-10-req-1"],
+                                    "priority": "required",
+                                    "status": "matched",
+                                }
+                            ],
+                            "gaps": [],
+                            "resumeHighlights": [
+                                {
+                                    "title": "REST API",
+                                    "description": "지원서에서 강조할 기술 경험입니다.",
+                                    "evidence": ["Spring Boot REST API를 구현했습니다."],
+                                    "action": "문제, 구현, 결과를 한 문장으로 정리합니다.",
+                                    "suggestedWording": "REST API 설계 및 구현 경험",
+                                    "requirementIds": ["jd-10-req-1"],
+                                    "priority": "required",
+                                    "status": "matched",
+                                }
+                            ],
+                            "strategyAdvice": [
+                                {
+                                    "title": "확인된 강점 우선 배치",
+                                    "description": "직접 연결되는 경험은 상단에 배치합니다.",
+                                    "evidence": ["Spring Boot REST API 개발 경험"],
+                                    "action": "이력서 요약과 프로젝트 설명에 먼저 노출합니다.",
+                                    "suggestedWording": None,
+                                    "requirementIds": ["jd-10-req-1"],
+                                    "priority": None,
+                                    "status": "matched",
+                                }
+                            ],
                         }
                     ],
                 }
@@ -148,11 +197,16 @@ def test_analysis_report_generator_uses_llm_provider_outputs() -> None:
     assert report.reportSummary == "LLM summary"
     assert report.reportContent == "# LLM report"
     assert report.jobs[0].strengthsSummary == "LLM strengths"
+    assert report.jobs[0].strengths[0].title == "Spring Boot REST API"
+    assert report.jobs[0].resumeHighlights[0].suggestedWording == (
+        "REST API 설계 및 구현 경험"
+    )
     assert report.jobs[0].requirementMatches[0].status == "matched"
     assert report.jobs[0].requirementMatches[0].evidence
 
     metadata = report.model_dump(mode="json")
     assert metadata["jobs"][0]["highlightPoints"] == ["spring boot"]
+    assert metadata["jobs"][0]["strategyAdvice"][0]["title"] == "확인된 강점 우선 배치"
 
 
 def test_analysis_report_generator_records_llm_step_metadata() -> None:

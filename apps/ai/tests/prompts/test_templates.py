@@ -138,6 +138,9 @@ def test_report_generation_prompt_includes_user_facing_report_shape() -> None:
     assert request.promptVersion == "report-generation-v1"
     assert "지원서에서 강조할 경험" in request.systemPrompt
     assert "matched 요구사항만 확실한 강점" in request.systemPrompt
+    assert "resumeHighlights" in request.systemPrompt
+    assert "suggestedWording" in request.userPrompt
+    assert '"strengths"' in request.userPrompt
     assert '"fitScore": 90.0' in request.userPrompt
 
 

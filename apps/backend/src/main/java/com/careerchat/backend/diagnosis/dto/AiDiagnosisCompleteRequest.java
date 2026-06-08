@@ -54,6 +54,16 @@ public record AiDiagnosisCompleteRequest(
 
             String highlightPoints,
 
+            String strengths,
+
+            String relatedExperiences,
+
+            String gaps,
+
+            String resumeHighlights,
+
+            String strategyAdvice,
+
             String matchDetails
     ) {
     }

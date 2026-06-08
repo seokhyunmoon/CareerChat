@@ -12,6 +12,7 @@ from app.schemas.analysis_result import (
     JobRequirement,
     MatchedProfileEvidence,
     RequirementMatch,
+    StructuredReportItem,
 )
 from app.schemas.callback import (
     CompleteCallbackJobResult,
@@ -63,5 +64,6 @@ __all__ = [
     "ResultChatResponse",
     "ResultChatResponseRequest",
     "SnapshotProfile",
+    "StructuredReportItem",
     "WorkExperienceSnapshot",
 ]

@@ -50,8 +50,38 @@ public record DiagnosisResultResponse(
             String strengthsSummary,
             String gapsSummary,
             String highlightPoints,
+            @JsonRawValue String strengths,
+            @JsonRawValue String relatedExperiences,
+            @JsonRawValue String gaps,
+            @JsonRawValue String resumeHighlights,
+            @JsonRawValue String strategyAdvice,
             @JsonRawValue String matchDetails
     ) {
+
+        @JsonRawValue
+        public String strengths() {
+            return strengths;
+        }
+
+        @JsonRawValue
+        public String relatedExperiences() {
+            return relatedExperiences;
+        }
+
+        @JsonRawValue
+        public String gaps() {
+            return gaps;
+        }
+
+        @JsonRawValue
+        public String resumeHighlights() {
+            return resumeHighlights;
+        }
+
+        @JsonRawValue
+        public String strategyAdvice() {
+            return strategyAdvice;
+        }
 
         @JsonRawValue
         public String matchDetails() {
@@ -69,6 +99,11 @@ public record DiagnosisResultResponse(
                     jdResult.getStrengthsSummary(),
                     jdResult.getGapsSummary(),
                     jdResult.getHighlightPoints(),
+                    jdResult.getStrengths(),
+                    jdResult.getRelatedExperiences(),
+                    jdResult.getGaps(),
+                    jdResult.getResumeHighlights(),
+                    jdResult.getStrategyAdvice(),
                     jdResult.getMatchDetails()
             );
         }
