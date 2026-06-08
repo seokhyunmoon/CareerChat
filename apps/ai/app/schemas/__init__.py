@@ -28,6 +28,13 @@ from app.schemas.profile_snapshot import (
     SnapshotProfile,
     WorkExperienceSnapshot,
 )
+from app.schemas.result_chat import (
+    PreviousChatMessage,
+    ResultChatEvidenceData,
+    ResultChatJobResult,
+    ResultChatResponse,
+    ResultChatResponseRequest,
+)
 
 __all__ = [
     "AchievementSnapshot",
@@ -49,7 +56,12 @@ __all__ = [
     "ProfileEvidenceReference",
     "ProfileSnapshot",
     "ProjectSnapshot",
+    "PreviousChatMessage",
     "RequirementMatch",
+    "ResultChatEvidenceData",
+    "ResultChatJobResult",
+    "ResultChatResponse",
+    "ResultChatResponseRequest",
     "SnapshotProfile",
     "WorkExperienceSnapshot",
 ]

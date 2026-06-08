@@ -14,9 +14,13 @@ from app.prompts.manifest import (
 )
 from app.prompts.renderer import render_prompt_template
 from app.prompts.templates import (
+    RESULT_CHAT_RESPONSE_PROMPT_KEY,
+    RESULT_CHAT_RESPONSE_PROMPT_VERSION,
+    RESULT_CHAT_RESPONSE_TEMPLATE_PATH,
     build_job_structuring_prompt,
     build_report_generation_prompt,
     build_requirement_matching_prompt,
+    build_result_chat_response_prompt,
 )
 
 __all__ = [
@@ -29,9 +33,13 @@ __all__ = [
     "PromptSet",
     "REPORT_GENERATION_PROMPT",
     "REQUIREMENT_MATCHING_PROMPT",
+    "RESULT_CHAT_RESPONSE_PROMPT_KEY",
+    "RESULT_CHAT_RESPONSE_PROMPT_VERSION",
+    "RESULT_CHAT_RESPONSE_TEMPLATE_PATH",
     "build_job_structuring_prompt",
     "build_report_generation_prompt",
     "build_requirement_matching_prompt",
+    "build_result_chat_response_prompt",
     "render_prompt_template",
     "resolve_prompt_set",
 ]

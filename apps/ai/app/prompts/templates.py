@@ -17,6 +17,12 @@ from app.schemas.analysis_result import (
     JobRequirement,
     MatchedProfileEvidence,
 )
+from app.schemas.result_chat import ResultChatResponseRequest
+
+
+RESULT_CHAT_RESPONSE_PROMPT_KEY = "result_chat_response"
+RESULT_CHAT_RESPONSE_PROMPT_VERSION = "result-chat-response-v1"
+RESULT_CHAT_RESPONSE_TEMPLATE_PATH = "result_chat_response_v1.md"
 
 def build_job_structuring_prompt(
     *,
@@ -160,6 +166,54 @@ def build_report_generation_prompt(
         responseSchemaName="ReportGenerationOutput",
         temperature=temperature,
         metadata={"jobCount": len(job_results)},
+    )
+
+
+def build_result_chat_response_prompt(
+    *,
+    request: ResultChatResponseRequest,
+    model_name: str,
+    temperature: float | None = None,
+) -> PromptExecutionRequest:
+    payload = {
+        "diagnosisId": request.diagnosisId,
+        "userMessage": request.userMessage,
+        "reportSummary": request.reportSummary,
+        "reportContent": request.reportContent,
+        "jobResults": [
+            job.model_dump(mode="json")
+            for job in request.jobResults
+        ],
+        "previousMessages": [
+            message.model_dump(mode="json")
+            for message in request.previousMessages
+        ],
+        "outputSchema": {
+            "content": "사용자에게 보여줄 한국어 답변",
+            "referencedJobIds": [request.jobResults[0].jdId],
+            "reasonCodes": ["REPORT_SUMMARY"],
+            "usedFields": ["reportSummary"],
+        },
+    }
+
+    prompt_template = render_prompt_template(
+        RESULT_CHAT_RESPONSE_TEMPLATE_PATH,
+        {"payload_json": _dump_prompt_json(payload)},
+    )
+
+    return PromptExecutionRequest(
+        promptKey=RESULT_CHAT_RESPONSE_PROMPT_KEY,
+        promptVersion=RESULT_CHAT_RESPONSE_PROMPT_VERSION,
+        modelName=model_name,
+        systemPrompt=prompt_template.system_prompt,
+        userPrompt=prompt_template.user_prompt,
+        responseSchemaName="ResultChatResponseOutput",
+        temperature=temperature,
+        metadata={
+            "diagnosisId": request.diagnosisId,
+            "jobCount": len(request.jobResults),
+            "previousMessageCount": len(request.previousMessages),
+        },
     )
 
 

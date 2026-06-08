@@ -6,9 +6,12 @@ from app.prompts import (
     JOB_STRUCTURING_PROMPT,
     REPORT_GENERATION_PROMPT,
     REQUIREMENT_MATCHING_PROMPT,
+    RESULT_CHAT_RESPONSE_PROMPT_KEY,
+    RESULT_CHAT_RESPONSE_PROMPT_VERSION,
     build_job_structuring_prompt,
     build_report_generation_prompt,
     build_requirement_matching_prompt,
+    build_result_chat_response_prompt,
     render_prompt_template,
 )
 from app.schemas.analysis_job import AnalysisJobPosting
@@ -18,6 +21,8 @@ from app.schemas.analysis_result import (
     MatchedProfileEvidence,
     RequirementMatch,
 )
+from app.schemas.result_chat import ResultChatResponseRequest
+from tests.schemas.test_result_chat_schema import build_result_chat_request_body
 
 
 def test_prompt_manifest_points_to_versioned_template_files() -> None:
@@ -134,3 +139,18 @@ def test_report_generation_prompt_includes_user_facing_report_shape() -> None:
     assert "지원서에서 강조할 경험" in request.systemPrompt
     assert "matched 요구사항만 확실한 강점" in request.systemPrompt
     assert '"fitScore": 90.0' in request.userPrompt
+
+
+def test_result_chat_response_prompt_includes_question_and_result_context() -> None:
+    request = build_result_chat_response_prompt(
+        request=ResultChatResponseRequest.model_validate(build_result_chat_request_body()),
+        model_name="fake-model",
+    )
+
+    assert request.promptKey == RESULT_CHAT_RESPONSE_PROMPT_KEY
+    assert request.promptVersion == RESULT_CHAT_RESPONSE_PROMPT_VERSION
+    assert request.responseSchemaName == "ResultChatResponseOutput"
+    assert "제공된 진단 결과 payload만 근거" in request.systemPrompt
+    assert '"userMessage": "어느 공고를 먼저 지원하는 게 좋아?"' in request.userPrompt
+    assert '"companyName": "토스"' in request.userPrompt
+    assert '"previousMessages"' in request.userPrompt
