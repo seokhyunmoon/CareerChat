@@ -32,6 +32,8 @@ class ProfileChunkSearcher(Protocol):
 
 
 class QdrantProfileEvidenceRetriever:
+    provider_name = "qdrant"
+
     def __init__(
         self,
         *,
@@ -68,6 +70,8 @@ class QdrantProfileEvidenceRetriever:
 
 
 class SnapshotProfileEvidenceRetriever:
+    provider_name = "snapshot"
+
     def retrieve_evidence(
         self,
         *,
@@ -126,3 +130,50 @@ def _build_evidence_from_scored_point(scored_point: Any) -> MatchedProfileEviden
         relevanceScore=round(float(scored_point.score), 4),
         rationale="Qdrant profile evidence matched the requirement query.",
     )
+
+
+class ResilientProfileEvidenceRetriever:
+    provider_name = "qdrant_with_snapshot_fallback"
+
+    def __init__(
+        self,
+        *,
+        primary: ProfileEvidenceRetriever,
+        fallback: ProfileEvidenceRetriever,
+    ) -> None:
+        self._primary = primary
+        self._fallback = fallback
+        self.last_provider_name = getattr(primary, "provider_name", "primary")
+        self.last_fallback_used = False
+
+    def retrieve_evidence(
+        self,
+        *,
+        diagnosis_id: int,
+        profile_snapshot: ProfileSnapshot,
+        requirement: JobRequirement,
+        top_k: int,
+    ) -> list[MatchedProfileEvidence]:
+        self.last_provider_name = getattr(self._primary, "provider_name", "primary")
+        self.last_fallback_used = False
+
+        try:
+            return self._primary.retrieve_evidence(
+                diagnosis_id=diagnosis_id,
+                profile_snapshot=profile_snapshot,
+                requirement=requirement,
+                top_k=top_k,
+            )
+        except Exception:
+            self.last_provider_name = getattr(
+                self._fallback,
+                "provider_name",
+                "fallback",
+            )
+            self.last_fallback_used = True
+            return self._fallback.retrieve_evidence(
+                diagnosis_id=diagnosis_id,
+                profile_snapshot=profile_snapshot,
+                requirement=requirement,
+                top_k=top_k,
+            )

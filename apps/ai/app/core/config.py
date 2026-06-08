@@ -52,6 +52,10 @@ class Settings(BaseSettings):
         validation_alias="EMBEDDING_MODEL",
         min_length=1,
     )
+    profile_retrieval_provider: Literal["qdrant", "snapshot"] = Field(
+        default="qdrant",
+        validation_alias="PROFILE_RETRIEVAL_PROVIDER",
+    )
     qdrant_url: str = Field(
         default="http://localhost:6333",
         validation_alias="QDRANT_URL",

@@ -201,6 +201,10 @@ class AnalysisReportGenerator:
                 requirement=requirement,
                 top_k=self._retrieval_top_k,
             )
+            _record_evidence_retrieval_step(
+                context.metadata,
+                retriever=self._evidence_retriever,
+            )
             requirement_matches.append(
                 self._match_requirement(
                     context=context,
@@ -411,6 +415,29 @@ def _record_deterministic_step(
         model_name="deterministic",
         prompt_version=None,
         provider_name="deterministic",
+        duration_ms=None,
+        retry_count=None,
+        fallback_used=fallback_used,
+    )
+
+
+def _record_evidence_retrieval_step(
+    metadata: AnalysisMetadata,
+    *,
+    retriever: ProfileEvidenceRetriever,
+) -> None:
+    provider_name = getattr(
+        retriever,
+        "last_provider_name",
+        getattr(retriever, "provider_name", "unknown"),
+    )
+    fallback_used = bool(getattr(retriever, "last_fallback_used", False))
+    _merge_step_metadata(
+        metadata,
+        step=PipelineStep.EVIDENCE_RETRIEVAL,
+        model_name=None,
+        prompt_version=None,
+        provider_name=provider_name,
         duration_ms=None,
         retry_count=None,
         fallback_used=fallback_used,
