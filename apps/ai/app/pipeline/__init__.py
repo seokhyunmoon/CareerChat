@@ -4,8 +4,10 @@ from app.pipeline.context import AnalysisPipelineContext, AnalysisPipelineResult
 from app.pipeline.evidence_retrieval import (
     ProfileEvidenceRetriever,
     QdrantProfileEvidenceRetriever,
+    ResilientProfileEvidenceRetriever,
     SnapshotProfileEvidenceRetriever,
 )
+from app.pipeline.factory import build_default_analysis_pipeline
 from app.pipeline.job_structuring import (
     DeterministicJobRequirementExtractor,
     LLMJobRequirementExtractor,
@@ -27,6 +29,8 @@ __all__ = [
     "LLMRequirementMatcher",
     "ProfileEvidenceRetriever",
     "QdrantProfileEvidenceRetriever",
+    "ResilientProfileEvidenceRetriever",
     "RequirementScoringService",
     "SnapshotProfileEvidenceRetriever",
+    "build_default_analysis_pipeline",
 ]

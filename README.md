@@ -148,6 +148,7 @@ curl http://localhost:8000/health
 | `GROQ_MODEL` | `llama-3.3-70b-versatile` |
 | `LLM_DETERMINISTIC_FALLBACK_ENABLED` | `true` |
 | `EMBEDDING_MODEL` | `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` |
+| `PROFILE_RETRIEVAL_PROVIDER` | `qdrant` (`snapshot`으로 fallback retriever만 사용할 수 있음) |
 | `QDRANT_URL` | `http://localhost:6333` |
 | `QDRANT_COLLECTION_NAME` | `careerchat_profile_chunks` |
 | `QDRANT_VECTOR_SIZE` | `384` |

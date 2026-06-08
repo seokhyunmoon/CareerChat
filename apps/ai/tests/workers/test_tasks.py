@@ -136,16 +136,23 @@ def test_run_analysis_task_uses_default_pipeline_and_posts_complete_callback(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     callback_client = FakeCallbackClient()
+    pipeline = FakePipeline()
     monkeypatch.setattr(
         tasks_module,
         "build_spring_callback_client",
         lambda: callback_client,
+    )
+    monkeypatch.setattr(
+        tasks_module,
+        "build_default_analysis_pipeline",
+        lambda: pipeline,
     )
 
     result = run_analysis_task(build_payload_dict())
 
     assert result["taskId"] == "task-1"
     assert result["reportPackage"]["taskId"] == "task-1"
+    assert len(pipeline.contexts) == 1
     assert len(callback_client.complete_payloads) == 1
     assert callback_client.complete_payloads[0].taskId == "task-1"
     assert (

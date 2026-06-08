@@ -8,7 +8,7 @@ from app.callbacks.payloads import (
     build_fail_callback_payload,
 )
 from app.pipeline.context import AnalysisPipelineContext, AnalysisPipelineResult
-from app.pipeline.orchestrator import AnalysisPipeline
+from app.pipeline.factory import build_default_analysis_pipeline
 from app.schemas.analysis_job import CallbackTarget
 from app.schemas.callback import CompleteCallbackPayload, FailCallbackPayload
 from app.workers.celery_app import celery_app
@@ -39,7 +39,7 @@ def run_analysis_payload(
     payload: AnalysisTaskPayload,
     pipeline: AnalysisPipelineRunner | None = None,
 ) -> AnalysisPipelineResult:
-    analysis_pipeline = pipeline or AnalysisPipeline()
+    analysis_pipeline = pipeline or build_default_analysis_pipeline()
     return analysis_pipeline.run(payload.to_pipeline_context())
 
 

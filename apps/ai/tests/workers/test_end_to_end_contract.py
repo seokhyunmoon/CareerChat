@@ -5,6 +5,7 @@ import json
 from app.schemas.analysis_job import AnalysisJobRequest
 from app.schemas.callback import CompleteCallbackPayload, FailCallbackPayload
 from app.schemas.metadata import AnalysisMetadata
+from app.pipeline.orchestrator import AnalysisPipeline
 from app.workers.payloads import AnalysisTaskPayload
 from app.workers.tasks import execute_analysis_task
 
@@ -98,6 +99,7 @@ def test_worker_pipeline_complete_callback_contract_end_to_end() -> None:
 
     result = execute_analysis_task(
         task_payload,
+        pipeline=AnalysisPipeline(),
         callback_client=callback_client,
     )
 

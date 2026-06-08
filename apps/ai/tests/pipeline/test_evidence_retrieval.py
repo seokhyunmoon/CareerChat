@@ -6,6 +6,7 @@ import pytest
 
 from app.pipeline.evidence_retrieval import (
     QdrantProfileEvidenceRetriever,
+    ResilientProfileEvidenceRetriever,
     SnapshotProfileEvidenceRetriever,
 )
 from app.schemas.analysis_result import JobRequirement
@@ -140,6 +141,34 @@ def test_qdrant_profile_evidence_retriever_rejects_invalid_top_k() -> None:
         )
 
 
+def test_resilient_profile_evidence_retriever_falls_back_to_snapshot() -> None:
+    requirement = JobRequirement(
+        requirementId="req-1",
+        category="skill",
+        priority="required",
+        description="Spring Boot REST API 개발 경험",
+        keywords=["spring boot", "rest api"],
+    )
+    retriever = ResilientProfileEvidenceRetriever(
+        primary=FailingRetriever(),
+        fallback=SnapshotProfileEvidenceRetriever(),
+    )
+
+    evidence = retriever.retrieve_evidence(
+        diagnosis_id=1,
+        profile_snapshot=build_profile_snapshot(),
+        requirement=requirement,
+        top_k=2,
+    )
+
+    assert retriever.last_provider_name == "snapshot"
+    assert retriever.last_fallback_used is True
+    assert evidence[0].evidence.sourceType == "project"
+    assert evidence[0].rationale == (
+        "프로필 snapshot 근거가 요구사항 키워드와 일치합니다."
+    )
+
+
 class FakeEmbeddingProvider:
     def __init__(self, vector: list[float]) -> None:
         self._vector = vector
@@ -174,3 +203,10 @@ class FakeVectorStore:
 class FakeScoredPoint:
     score: float
     payload: dict
+
+
+class FailingRetriever:
+    provider_name = "qdrant"
+
+    def retrieve_evidence(self, **kwargs) -> list:
+        raise RuntimeError("qdrant unavailable")
