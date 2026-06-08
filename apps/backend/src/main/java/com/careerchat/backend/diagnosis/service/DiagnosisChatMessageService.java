@@ -1,18 +1,25 @@
 package com.careerchat.backend.diagnosis.service;
 
+import com.careerchat.backend.diagnosis.ai.dto.AiResultChatResponse;
+import com.careerchat.backend.diagnosis.ai.service.AiResultChatResponseRequester;
 import com.careerchat.backend.diagnosis.domain.ChatMessage;
 import com.careerchat.backend.diagnosis.domain.ChatRole;
 import com.careerchat.backend.diagnosis.domain.Diagnosis;
 import com.careerchat.backend.diagnosis.domain.DiagnosisStatus;
+import com.careerchat.backend.diagnosis.domain.JDResult;
 import com.careerchat.backend.diagnosis.dto.ChatMessageCreateRequest;
-import com.careerchat.backend.diagnosis.dto.ChatMessageResponse;
+import com.careerchat.backend.diagnosis.dto.ChatMessageCreateResponse;
 import com.careerchat.backend.diagnosis.dto.ChatMessagesResponse;
 import com.careerchat.backend.diagnosis.repository.ChatMessageRepository;
 import com.careerchat.backend.diagnosis.repository.DiagnosisRepository;
+import com.careerchat.backend.diagnosis.repository.JDResultRepository;
 import com.careerchat.backend.global.exception.BusinessException;
 import com.careerchat.backend.global.exception.ErrorCode;
 import com.careerchat.backend.user.domain.User;
 import com.careerchat.backend.user.repository.UserRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,16 +29,25 @@ public class DiagnosisChatMessageService {
 
     private final UserRepository userRepository;
     private final DiagnosisRepository diagnosisRepository;
+    private final JDResultRepository jdResultRepository;
     private final ChatMessageRepository chatMessageRepository;
+    private final AiResultChatResponseRequester aiResultChatResponseRequester;
+    private final ObjectMapper objectMapper;
 
     public DiagnosisChatMessageService(
             UserRepository userRepository,
             DiagnosisRepository diagnosisRepository,
-            ChatMessageRepository chatMessageRepository
+            JDResultRepository jdResultRepository,
+            ChatMessageRepository chatMessageRepository,
+            AiResultChatResponseRequester aiResultChatResponseRequester,
+            ObjectMapper objectMapper
     ) {
         this.userRepository = userRepository;
         this.diagnosisRepository = diagnosisRepository;
+        this.jdResultRepository = jdResultRepository;
         this.chatMessageRepository = chatMessageRepository;
+        this.aiResultChatResponseRequester = aiResultChatResponseRequester;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional(readOnly = true)
@@ -45,7 +61,7 @@ public class DiagnosisChatMessageService {
     }
 
     @Transactional
-    public ChatMessageResponse createUserMessage(
+    public ChatMessageCreateResponse createUserMessage(
             Long userId,
             Long diagnosisId,
             ChatMessageCreateRequest request
@@ -54,14 +70,31 @@ public class DiagnosisChatMessageService {
         Diagnosis diagnosis = getOwnedDiagnosis(user, diagnosisId);
         validateCompletedDiagnosis(diagnosis);
 
-        ChatMessage chatMessage = chatMessageRepository.save(new ChatMessage(
+        List<ChatMessage> previousMessages = chatMessageRepository.findAllByDiagnosisOrderByCreatedAtAscIdAsc(
+                diagnosis
+        );
+        List<JDResult> jdResults = jdResultRepository.findAllByDiagnosisOrderByDisplayOrderAsc(diagnosis);
+        ChatMessage userMessage = chatMessageRepository.save(new ChatMessage(
                 diagnosis,
                 ChatRole.USER,
                 request.content(),
                 null
         ));
 
-        return ChatMessageResponse.from(chatMessage);
+        AiResultChatResponse aiResponse = aiResultChatResponseRequester.request(
+                diagnosis,
+                jdResults,
+                userMessage,
+                previousMessages
+        );
+        ChatMessage assistantMessage = chatMessageRepository.save(new ChatMessage(
+                diagnosis,
+                ChatRole.ASSISTANT,
+                aiResponse.content(),
+                writeEvidenceData(aiResponse)
+        ));
+
+        return ChatMessageCreateResponse.of(userMessage, assistantMessage);
     }
 
     private User getCurrentUser(Long userId) {
@@ -90,6 +123,17 @@ public class DiagnosisChatMessageService {
             throw new BusinessException(
                     ErrorCode.DIAGNOSIS_NOT_COMPLETED,
                     "Diagnosis result is not ready for chat."
+            );
+        }
+    }
+
+    private String writeEvidenceData(AiResultChatResponse aiResponse) {
+        try {
+            return objectMapper.writeValueAsString(aiResponse.evidenceData());
+        } catch (JsonProcessingException exception) {
+            throw new BusinessException(
+                    ErrorCode.AI_CHAT_RESPONSE_FAILED,
+                    "AI assistant response is temporarily unavailable."
             );
         }
     }
