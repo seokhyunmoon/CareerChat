@@ -309,10 +309,10 @@ export default function MyInfo() {
             </div>
           )}
 
-          <div className="profile-header">
-            <div className="tag" style={{ marginBottom: '12px' }}>STEP 1 / 4</div>
-            <div className="profile-title">내 정보</div>
-            <div className="profile-sub">경험을 기반으로 나의 직무 역량을 관리합니다.</div>
+          <div className="profile-header page-header">
+            <div className="tag page-step">STEP 1 / 4</div>
+            <div className="profile-title page-title">내 정보</div>
+            <div className="profile-sub page-subtitle">경험을 기반으로 나의 직무 역량을 관리합니다.</div>
           </div>
 
           <div className="section-block" id="sec-type">

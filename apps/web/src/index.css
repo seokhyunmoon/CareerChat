@@ -21,6 +21,20 @@
   --mono: 'DM Mono', monospace;
   --serif: 'DM Serif Display', serif;
   --sans: 'Pretendard', sans-serif;
+  --font-size-body: 16px;
+  --font-size-body-compact: 15px;
+  --font-size-body-small: 14px;
+  --font-size-helper: 14px;
+  --font-size-meta: 13px;
+  --font-size-micro: 12px;
+  --font-size-button: 15px;
+  --font-size-label: 13px;
+  --font-size-page-title: 30px;
+  --font-size-section-title: 26px;
+  --font-size-card-title: 16px;
+  --line-height-copy: 1.7;
+  --line-height-title: 1.2;
+  --line-height-ui: 1.45;
 }
 
 /* ─── RESET & BASE ───────────────────────────────────── */
@@ -40,8 +54,8 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--sans);
-  font-size: 15px;
-  line-height: 1.6;
+  font-size: var(--font-size-body);
+  line-height: 1.65;
   min-height: 100vh;
   overflow-x: hidden;
 }
@@ -139,7 +153,7 @@ nav {
   padding: 8px 20px;
   border-radius: 100px;
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: var(--font-size-body-small);
   cursor: pointer;
   transition: all .2s;
 }
@@ -193,7 +207,7 @@ nav {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: var(--font-size-body-small);
   color: var(--green);
   font-weight: 600;
 }
@@ -204,7 +218,7 @@ nav {
 }
 
 .nav-name {
-  font-size: 14px;
+  font-size: var(--font-size-body-compact);
   color: var(--text);
   font-weight: 600;
 }
@@ -236,7 +250,7 @@ nav {
   color: var(--text);
   cursor: pointer;
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: var(--font-size-body-small);
   font-weight: 600;
   padding: 10px 12px;
   border-radius: 8px;
@@ -269,7 +283,7 @@ section {
   align-items: center;
   gap: 6px;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--font-size-micro);
   color: var(--green);
   background: var(--green-dim);
   border: 1px solid rgba(74, 222, 128, .2);
@@ -297,7 +311,7 @@ section {
   padding: 14px 32px;
   border-radius: 100px;
   font-family: var(--sans);
-  font-size: 14px;
+  font-size: var(--font-size-button);
   font-weight: 600;
   cursor: pointer;
   transition: all .25s;
@@ -344,7 +358,7 @@ section {
   background: transparent;
   border: 1px solid var(--border);
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--font-size-body-small);
   padding: 10px 20px;
 }
 
@@ -369,7 +383,7 @@ section {
 }
 
 .field label {
-  font-size: 12px;
+  font-size: var(--font-size-label);
   color: var(--muted);
   font-family: var(--mono);
   letter-spacing: .05em;
@@ -385,7 +399,7 @@ section {
   padding: 12px 16px;
   border-radius: 10px;
   font-family: var(--sans);
-  font-size: 14px;
+  font-size: var(--font-size-body-compact);
   transition: border-color .2s;
   resize: none;
   outline: none;
@@ -410,7 +424,7 @@ section {
 
 .field textarea.textarea-long {
   min-height: 220px;
-  line-height: 1.6;
+  line-height: var(--line-height-copy);
   resize: vertical;
 }
 
@@ -437,7 +451,7 @@ section {
   min-height: 100vh;
   display: flex;
   align-items: center;
-  padding-top: 80px;
+  padding: 112px 0 72px;
   position: relative;
   overflow: hidden;
 }
@@ -2510,6 +2524,146 @@ section {
 .history-status.failed {
   border-color: rgba(248, 113, 113, .22);
   color: var(--red);
+}
+
+/* ─── TYPOGRAPHY NORMALIZATION ───────────────────────── */
+.page-header {
+  margin-bottom: 28px;
+}
+
+.page-step {
+  margin-bottom: 12px;
+}
+
+.page-title,
+.profile-title,
+.jobs-title,
+.history-title,
+.result-title {
+  font-family: var(--sans);
+  font-size: var(--font-size-page-title);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: var(--line-height-title);
+  margin-bottom: 8px;
+}
+
+.page-subtitle,
+.profile-sub,
+.jobs-sub,
+.history-sub {
+  color: var(--muted);
+  font-size: var(--font-size-helper);
+  line-height: var(--line-height-copy);
+}
+
+.profile-section-title {
+  font-size: var(--font-size-section-title);
+  line-height: var(--line-height-title);
+}
+
+.section-block-title,
+.diag-card-title,
+.chat-title,
+.failure-title {
+  font-size: var(--font-size-card-title);
+  line-height: var(--line-height-ui);
+}
+
+.auth-sub,
+.profile-message,
+.entry-empty,
+.diag-tip,
+.diagnosis-message,
+.run-btn-info,
+.status-panel-body,
+.failure-desc,
+.history-feedback,
+.report-summary-content,
+.strength-text,
+.highlight-card-body,
+.requirement-reason,
+.requirement-empty,
+.msg {
+  font-size: var(--font-size-body-small);
+  line-height: var(--line-height-copy);
+}
+
+.entry-title,
+.diag-profile-name,
+.rank-company,
+.requirement-title {
+  font-size: var(--font-size-body-compact);
+  line-height: var(--line-height-ui);
+}
+
+.entry-sub,
+.profile-email,
+.sidebar-item,
+.add-btn,
+.save-notice,
+.diag-profile-badge,
+.diag-profile-action span,
+.diag-profile-edit,
+.jobs-count,
+.rank-job,
+.job-tab,
+.evidence-details summary,
+.requirement-evidence,
+.chat-input,
+.toast,
+.footer-text {
+  font-size: var(--font-size-meta);
+}
+
+.badge-required,
+.profile-required,
+.diag-profile-label,
+.chip,
+.diag-tip strong,
+.job-card-num,
+.status-kicker,
+.sub-label,
+.highlight-card-title,
+.requirement-badges span,
+.chat-subtitle,
+.quick-btn,
+.history-summary span,
+.history-date,
+.history-company-list,
+.history-jobs,
+.history-id,
+.history-score-label,
+.history-status {
+  font-size: var(--font-size-micro);
+}
+
+.result-meta {
+  font-size: var(--font-size-meta);
+  line-height: var(--line-height-copy);
+}
+
+.result-tag {
+  font-size: var(--font-size-micro);
+}
+
+.history-filter,
+.history-note,
+.history-action {
+  font-size: var(--font-size-body-small);
+}
+
+.save-bar .btn,
+.btn-social,
+.btn-full,
+.type-btn,
+.add-job-btn {
+  font-size: var(--font-size-body-compact);
+}
+
+.form-error {
+  font-size: var(--font-size-meta);
+  line-height: var(--line-height-ui);
 }
 
 /* ─── MODAL ──────────────────────────────────────────── */

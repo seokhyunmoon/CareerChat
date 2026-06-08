@@ -86,11 +86,11 @@ export default function Analyze() {
       <div id="page-diagnose" className="page active">
         <div className="diag-layout">
           <div>
-            <div className="jobs-header">
+            <div className="jobs-header page-header">
               <div>
-                <div className="tag" style={{ marginBottom: '12px' }}>STEP 2 / 4</div>
-                <div className="jobs-title">채용공고 입력</div>
-                <div className="jobs-sub">비교하고 싶은 공고를 최대 3개까지 입력하세요.</div>
+                <div className="tag page-step">STEP 2 / 4</div>
+                <div className="jobs-title page-title">채용공고 입력</div>
+                <div className="jobs-sub page-subtitle">비교하고 싶은 공고를 최대 3개까지 입력하세요.</div>
               </div>
               <div className="jobs-count" id="jobs-count">
                 {jobCards.length} / 3

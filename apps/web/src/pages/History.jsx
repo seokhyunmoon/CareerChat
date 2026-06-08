@@ -84,10 +84,10 @@ export default function History() {
   return (
     <div id="page-history" className="page active">
       <div className="history-layout">
-        <div className="history-header">
-          <div className="tag" style={{ marginBottom: '12px' }}>STEP 3 / 4</div>
-          <div className="history-title">진단 기록</div>
-          <div className="history-sub">과거에 진행한 비교 진단 결과를 다시 확인하세요.</div>
+        <div className="history-header page-header">
+          <div className="tag page-step">STEP 3 / 4</div>
+          <div className="history-title page-title">진단 기록</div>
+          <div className="history-sub page-subtitle">과거에 진행한 비교 진단 결과를 다시 확인하세요.</div>
         </div>
 
         {isLoading && (
