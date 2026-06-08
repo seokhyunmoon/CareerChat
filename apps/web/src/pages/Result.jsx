@@ -1,4 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  AlertTriangle,
+  BriefcaseBusiness,
+  CheckCircle2,
+  FileText,
+  Lightbulb,
+  Target,
+} from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   createDiagnosisChatMessage,
@@ -35,22 +43,76 @@ const matchLevelLabels = {
   none: '없음',
 };
 
-function getRankClass(index) {
+function getRankClass(index, jobCount, score) {
+  if (jobCount === 1) {
+    if (score >= 70) return 'r1';
+    if (score >= 40) return 'r2';
+    return 'r-low';
+  }
+
   if (index === 0) return 'r1';
   if (index === 1) return 'r2';
   return 'r3';
 }
 
-function getScoreClass(index) {
-  if (index === 0) return 's1';
-  if (index === 1) return 's2';
-  return 's3';
+function getScoreClass(score) {
+  if (score >= 70) return 's1';
+  if (score >= 40) return 's2';
+  return 's-low';
 }
 
-function getBarClass(index) {
-  if (index === 0) return 'b1';
-  if (index === 1) return 'b2';
-  return 'b3';
+function getBarClass(score) {
+  if (score >= 70) return 'b1';
+  if (score >= 40) return 'b2';
+  return 'b-low';
+}
+
+function getRankLabel(index, jobCount) {
+  return jobCount === 1 ? '대상' : rankLabels[index];
+}
+
+function getResultStatus(job) {
+  if (!job) return { label: '분석 완료', tone: '' };
+  if (job.fitScore < 40) return { label: '보완 우선', tone: 'caution' };
+  if (job.fitScore < 70) return { label: '검토 필요', tone: 'caution' };
+
+  return { label: '분석 완료', tone: '' };
+}
+
+function StructuredItemList({ items, icon, tone = 'default' }) {
+  return (
+    <div className={`structured-list ${tone}`}>
+      {items.map((item, index) => (
+        <div className="structured-item" key={`${item.title}-${index}`}>
+          <div className="structured-item-icon" aria-hidden="true">
+            {React.createElement(icon, { size: 17, strokeWidth: 2 })}
+          </div>
+          <div className="structured-item-content">
+            <div className="structured-item-title">{item.title}</div>
+            <div className="structured-item-description">{item.description}</div>
+            {item.evidence?.length > 0 && (
+              <div className="structured-item-evidence">
+                <span>근거</span>
+                {item.evidence.join(' · ')}
+              </div>
+            )}
+            {item.action && (
+              <div className="structured-item-action">
+                <span>다음 행동</span>
+                {item.action}
+              </div>
+            )}
+            {item.suggestedWording && (
+              <div className="structured-item-wording">
+                <span>추천 문구</span>
+                {item.suggestedWording}
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function toChatMessageViewModel(message) {
@@ -273,6 +335,7 @@ export default function Result() {
 
   const safeActiveTab = activeTab < jobs.length ? activeTab : 0;
   const activeJob = jobs[safeActiveTab] ?? jobs[0];
+  const resultStatus = getResultStatus(jobs[0]);
   const displayChatMessages = chatMessages.length > 0 ? chatMessages : [INTRO_CHAT_MESSAGE];
   const canSendChat = diagnosis?.status === 'COMPLETED' && !isChatLoading && !isChatSending;
   const showQuickQuestions = !isChatLoading && !isChatSending && chatMessages.length === 0;
@@ -424,28 +487,33 @@ export default function Result() {
             <div className="result-hero-top">
               <div className="result-tag">
                 <span className="pulse" aria-hidden="true"></span>
-                지원 우선순위 추천
+                {jobs.length === 1 ? '공고 적합도 분석' : '지원 우선순위 추천'}
               </div>
-              <div className="result-tag">
+              <div className={`result-tag ${resultStatus.tone}`}>
                 <span className="pulse" aria-hidden="true"></span>
-                분석 완료
+                {resultStatus.label}
               </div>
             </div>
             <div className="ranking-list">
               {jobs.map((job, index) => (
                 <div className="rank-item" key={job.jdId}>
-                  <div className={`rank-badge ${getRankClass(index)}`}>{rankLabels[index]}</div>
+                  <div className={`rank-badge ${getRankClass(index, jobs.length, job.fitScore)}`}>
+                    {getRankLabel(index, jobs.length)}
+                  </div>
                   <div className="rank-info">
                     <div className="rank-company">{job.companyName}</div>
                     <div className="rank-job">{job.position}</div>
                   </div>
                   <div className="rank-score-wrap">
-                    <div className={`rank-score ${getScoreClass(index)}`}>
+                    <div className={`rank-score ${getScoreClass(job.fitScore)}`}>
                       {job.fitScore}
                       <span style={{ fontSize: '16px', color: 'var(--muted)' }}>점</span>
                     </div>
                     <div className="rank-bar-wrap">
-                      <div className={`rank-bar ${getBarClass(index)}`} style={{ width: `${job.fitScore}%` }}></div>
+                      <div
+                        className={`rank-bar ${getBarClass(job.fitScore)}`}
+                        style={{ width: `${job.fitScore}%` }}
+                      ></div>
                     </div>
                   </div>
                 </div>
@@ -458,9 +526,24 @@ export default function Result() {
             <div className="report-summary-title">
               {diagnosis.reportSummary ?? '요약 결과가 아직 제공되지 않았습니다.'}
             </div>
-            <p className="report-summary-content">
-              {diagnosis.reportContent ?? '상세 분석 본문이 아직 제공되지 않았습니다.'}
-            </p>
+            {diagnosis.reportContentSections?.length > 0 ? (
+              <div className="report-section-list">
+                {diagnosis.reportContentSections.map((section, sectionIndex) => (
+                  <div className="report-section" key={`${section.title}-${sectionIndex}`}>
+                    <div className="report-section-title">{section.title}</div>
+                    <ul>
+                      {section.items.map((item, index) => (
+                        <li key={`${section.title}-${index}`}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="report-summary-content">
+                {diagnosis.reportContent ?? '상세 분석 본문이 아직 제공되지 않았습니다.'}
+              </p>
+            )}
           </div>
 
           <div className="card fade-up fade-up-d2">
@@ -474,46 +557,74 @@ export default function Result() {
                   key={job.jdId}
                   onClick={() => setActiveTab(index)}
                 >
-                  {['🟢', '🟡', '⚪'][index] ?? '•'} {job.companyName}
+                  <span className={`job-tab-dot ${getScoreClass(job.fitScore)}`} aria-hidden="true"></span>
+                  {job.companyName}
                 </button>
               ))}
             </div>
 
             {activeJob && (
               <div className="detail-panel active">
-                <span className="sub-label">✅ 강점</span>
-                <div className="strength-list">
-                  {activeJob.strengths.map((strength) => (
-                    <div className="strength-item" key={strength}>
-                      <div className="strength-icon">💪</div>
-                      <div className="strength-text">{strength}</div>
-                    </div>
-                  ))}
+                <div className="detail-section-heading">
+                  <CheckCircle2 size={16} aria-hidden="true" />
+                  <span>확인된 강점</span>
                 </div>
+                <StructuredItemList items={activeJob.strengthItems} icon={CheckCircle2} tone="strength" />
 
-                <span className="sub-label">⚠️ 부족 역량 및 보완 방향</span>
-                <div className="gap-list">
-                  {activeJob.gaps.map((gap) => (
-                    <div className="strength-item" key={`${gap.title ?? ''}-${gap.body}`}>
-                      <div className="strength-icon">📌</div>
-                      <div className="strength-text">
-                        {gap.title && <strong style={{ color: 'var(--yellow)' }}>{gap.title}</strong>}
-                        {gap.title ? ' — ' : ''}
-                        {gap.body}
-                      </div>
+                {activeJob.relatedExperienceItems.length > 0 && (
+                  <>
+                    <div className="detail-section-heading">
+                      <BriefcaseBusiness size={16} aria-hidden="true" />
+                      <span>관련 경험</span>
                     </div>
-                  ))}
-                </div>
+                    <StructuredItemList
+                      items={activeJob.relatedExperienceItems}
+                      icon={BriefcaseBusiness}
+                      tone="experience"
+                    />
+                  </>
+                )}
 
-                <span className="sub-label">📝 이력서 강조 포인트</span>
+                <div className="detail-section-heading">
+                  <AlertTriangle size={16} aria-hidden="true" />
+                  <span>부족 역량 및 보완 방향</span>
+                </div>
+                <StructuredItemList items={activeJob.gapItems} icon={AlertTriangle} tone="gap" />
+
+                <div className="detail-section-heading">
+                  <FileText size={16} aria-hidden="true" />
+                  <span>이력서 강조 포인트</span>
+                </div>
                 <div className="highlight-cards">
-                  {activeJob.highlightCards.map((card) => (
-                    <div className="highlight-card" key={card.title}>
+                  {activeJob.highlightCards.map((card, index) => (
+                    <div className="highlight-card" key={`${card.title}-${index}`}>
                       <div className="highlight-card-title">{card.title}</div>
                       <div className="highlight-card-body">{card.body}</div>
+                      {card.action && (
+                        <div className="highlight-card-action">
+                          <span>반영 방법</span>
+                          {card.action}
+                        </div>
+                      )}
+                      {card.suggestedWording && (
+                        <div className="highlight-card-wording">
+                          <span>추천 문구</span>
+                          {card.suggestedWording}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
+
+                {activeJob.strategyItems.length > 0 && (
+                  <>
+                    <div className="detail-section-heading strategy-heading">
+                      <Target size={16} aria-hidden="true" />
+                      <span>지원 전략</span>
+                    </div>
+                    <StructuredItemList items={activeJob.strategyItems} icon={Lightbulb} tone="strategy" />
+                  </>
+                )}
 
                 <details className="evidence-details">
                   <summary>판단 근거 자세히 보기</summary>
