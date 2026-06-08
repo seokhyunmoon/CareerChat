@@ -52,13 +52,13 @@ function ResultStatusMessage({ title, description, actionLabel, onAction }) {
           <div className="result-hero failed-hero fade-up">
             <div className="result-hero-top">
               <div>
-                <div className="tag danger result-step-tag">STEP 4 / 4</div>
-                <div className="result-title">
+                <div className="tag danger page-step result-step-tag">STEP 4 / 4</div>
+                <div className="result-title page-title">
                   진단 결과를
                   <br />
                   확인할 수 없습니다
                 </div>
-                <div className="result-meta">진단 상태 조회</div>
+                <div className="result-meta page-subtitle">진단 상태 조회</div>
               </div>
               <div className="result-tag danger">확인 필요</div>
             </div>
@@ -251,13 +251,13 @@ export default function Result() {
             <div className="result-hero failed-hero fade-up">
               <div className="result-hero-top">
                 <div>
-                  <div className="tag danger result-step-tag">STEP 4 / 4</div>
-                  <div className="result-title">
+                  <div className="tag danger page-step result-step-tag">STEP 4 / 4</div>
+                  <div className="result-title page-title">
                     분석을 완료하지
                     <br />
                     못했습니다
                   </div>
-                  <div className="result-meta">
+                  <div className="result-meta page-subtitle">
                     요청일 {diagnosis.createdAt} · {diagnosis.meta}
                   </div>
                 </div>
@@ -307,10 +307,10 @@ export default function Result() {
     <div id="page-result" className="page active">
       <div className="result-layout">
         <div className="result-main">
-          <div className="history-header">
-            <div className="tag" style={{ marginBottom: '12px' }}>STEP 4 / 4</div>
-            <div className="history-title">진단 결과 리포트</div>
-            <div className="history-sub">분석일 {diagnosis.completedAt} · {diagnosis.meta}</div>
+          <div className="history-header page-header">
+            <div className="tag page-step">STEP 4 / 4</div>
+            <div className="history-title page-title">진단 결과 리포트</div>
+            <div className="history-sub page-subtitle">분석일 {diagnosis.completedAt} · {diagnosis.meta}</div>
           </div>
           <div className="result-hero fade-up">
             <div className="result-hero-top">

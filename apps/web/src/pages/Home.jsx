@@ -15,7 +15,7 @@ export default function Home() {
   return (
     <div id="page-landing" className="page active">
       {/* Hero */}
-      <section className="hero" style={{ padding: 0 }}>
+      <section className="hero">
         <div className="hero-grid-bg"></div>
         <div className="hero-glow"></div>
         <div className="container" style={{ width: '100%' }}>
