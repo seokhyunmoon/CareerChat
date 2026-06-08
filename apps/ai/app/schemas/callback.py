@@ -12,6 +12,11 @@ class CompleteCallbackJobResult(BaseModel):
     strengthsSummary: str | None = None
     gapsSummary: str | None = None
     highlightPoints: str | None = None
+    strengths: str | None = None
+    relatedExperiences: str | None = None
+    gaps: str | None = None
+    resumeHighlights: str | None = None
+    strategyAdvice: str | None = None
     matchDetails: str | None = None
 
 

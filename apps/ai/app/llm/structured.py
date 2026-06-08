@@ -16,6 +16,7 @@ from app.llm.errors import InvalidLLMResponseError
 from app.schemas.analysis_result import (
     JobRequirement,
     RequirementMatchStatus,
+    StructuredReportItem,
 )
 
 StructuredOutputT = TypeVar("StructuredOutputT", bound=BaseModel)
@@ -63,6 +64,11 @@ class ReportJobSummary(BaseModel):
     strengthsSummary: str | None = None
     gapsSummary: str | None = None
     highlightPoints: list[str] = Field(default_factory=list)
+    strengths: list[StructuredReportItem] = Field(default_factory=list)
+    relatedExperiences: list[StructuredReportItem] = Field(default_factory=list)
+    gaps: list[StructuredReportItem] = Field(default_factory=list)
+    resumeHighlights: list[StructuredReportItem] = Field(default_factory=list)
+    strategyAdvice: list[StructuredReportItem] = Field(default_factory=list)
 
 
 class ReportGenerationOutput(BaseModel):

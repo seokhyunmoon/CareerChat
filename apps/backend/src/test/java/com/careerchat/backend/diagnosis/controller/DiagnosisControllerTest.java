@@ -221,6 +221,11 @@ class DiagnosisControllerTest {
                 .andExpect(jsonPath("$.data.jobs[0].jdId").value(200))
                 .andExpect(jsonPath("$.data.jobs[0].rankOrder").value(1))
                 .andExpect(jsonPath("$.data.jobs[0].fitScore").value(86.5))
+                .andExpect(jsonPath("$.data.jobs[0].strengths[0].title").value("Spring Boot"))
+                .andExpect(jsonPath("$.data.jobs[0].relatedExperiences[0].title").value("CareerChat"))
+                .andExpect(jsonPath("$.data.jobs[0].gaps[0].title").value("운영 경험"))
+                .andExpect(jsonPath("$.data.jobs[0].resumeHighlights[0].title").value("REST API"))
+                .andExpect(jsonPath("$.data.jobs[0].strategyAdvice[0].title").value("필수 요건 보완"))
                 .andExpect(jsonPath("$.data.jobs[0].matchDetails.requirements[0].name").value("Spring"))
                 .andExpect(jsonPath("$.data.aiTaskId").doesNotExist())
                 .andExpect(jsonPath("$.data.profileSnapshot").doesNotExist())
@@ -389,6 +394,11 @@ class DiagnosisControllerTest {
                         "강점",
                         "부족",
                         "강조",
+                        "[{\"title\":\"Spring Boot\",\"description\":\"REST API 경험\"}]",
+                        "[{\"title\":\"CareerChat\",\"description\":\"관련 프로젝트\"}]",
+                        "[{\"title\":\"운영 경험\",\"description\":\"근거 부족\"}]",
+                        "[{\"title\":\"REST API\",\"description\":\"강조 포인트\"}]",
+                        "[{\"title\":\"필수 요건 보완\",\"description\":\"운영 경험 보완 필요\"}]",
                         "{\"requirements\":[{\"name\":\"Spring\",\"match\":\"HIGH\"}]}"
                 ))
         );

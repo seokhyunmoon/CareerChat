@@ -147,6 +147,66 @@ def build_report_generation_prompt(
                     "strengthsSummary": "공고별 강점 요약",
                     "gapsSummary": "공고별 보완점 요약",
                     "highlightPoints": ["강조할 키워드"],
+                    "strengths": [
+                        {
+                            "title": "강점 제목",
+                            "description": "matched requirement와 evidence 기반 설명",
+                            "evidence": ["프로필 근거 요약"],
+                            "action": "지원서에서 이 강점을 강조하는 방법",
+                            "suggestedWording": "이력서/자기소개서에 쓸 수 있는 표현",
+                            "requirementIds": ["jd-1-req-1"],
+                            "priority": "required | preferred | optional | null",
+                            "status": "matched | partial | missing | null",
+                        }
+                    ],
+                    "relatedExperiences": [
+                        {
+                            "title": "관련 경험 제목",
+                            "description": "경험이 공고 요구사항과 연결되는 이유",
+                            "evidence": ["프로필 근거 요약"],
+                            "action": "경험을 보강해 표현하는 방법",
+                            "suggestedWording": "경험 표현 예시 또는 null",
+                            "requirementIds": ["jd-1-req-1"],
+                            "priority": "required | preferred | optional | null",
+                            "status": "matched | partial | missing | null",
+                        }
+                    ],
+                    "gaps": [
+                        {
+                            "title": "부족 역량 제목",
+                            "description": "partial/missing 판단 이유",
+                            "evidence": ["확인된 근거가 있으면 요약, 없으면 빈 배열"],
+                            "action": "보완 액션",
+                            "suggestedWording": "부족한 경험을 보완해 설명하는 표현",
+                            "requirementIds": ["jd-1-req-2"],
+                            "priority": "required | preferred | optional | null",
+                            "status": "partial | missing | null",
+                        }
+                    ],
+                    "resumeHighlights": [
+                        {
+                            "title": "강조 포인트",
+                            "description": "무엇을 왜 강조할지",
+                            "evidence": ["프로필 근거 요약"],
+                            "action": "이력서 반영 방법",
+                            "suggestedWording": "이력서 bullet 예시",
+                            "requirementIds": ["jd-1-req-1"],
+                            "priority": "required | preferred | optional | null",
+                            "status": "matched | partial | missing | null",
+                        }
+                    ],
+                    "strategyAdvice": [
+                        {
+                            "title": "지원 전략 제목",
+                            "description": "점수와 requirement 분포 기반 조언",
+                            "evidence": ["근거가 되는 요구사항 요약"],
+                            "action": "다음 행동",
+                            "suggestedWording": "지원서 표현 예시 또는 null",
+                            "requirementIds": ["jd-1-req-1"],
+                            "priority": "required | preferred | optional | null",
+                            "status": "matched | partial | missing | null",
+                        }
+                    ],
                 }
             ],
         },

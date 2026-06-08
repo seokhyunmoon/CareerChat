@@ -60,6 +60,19 @@ class RequirementMatch(BaseModel):
         return evidence
 
 
+class StructuredReportItem(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+    evidence: list[str] = Field(default_factory=list)
+    action: str | None = None
+    suggestedWording: str | None = None
+    requirementIds: list[str] = Field(default_factory=list)
+    priority: RequirementPriority | None = None
+    status: RequirementMatchStatus | None = None
+
+
 class JobAnalysisResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -71,6 +84,11 @@ class JobAnalysisResult(BaseModel):
     strengthsSummary: str | None = None
     gapsSummary: str | None = None
     highlightPoints: list[str] = Field(default_factory=list)
+    strengths: list[StructuredReportItem] = Field(default_factory=list)
+    relatedExperiences: list[StructuredReportItem] = Field(default_factory=list)
+    gaps: list[StructuredReportItem] = Field(default_factory=list)
+    resumeHighlights: list[StructuredReportItem] = Field(default_factory=list)
+    strategyAdvice: list[StructuredReportItem] = Field(default_factory=list)
     requirementMatches: list[RequirementMatch] = Field(default_factory=list)
 
 

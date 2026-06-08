@@ -50,6 +50,11 @@ def _build_complete_callback_job_result(
         strengthsSummary=job.strengthsSummary,
         gapsSummary=job.gapsSummary,
         highlightPoints=_dump_json_or_none(job.highlightPoints),
+        strengths=_dump_json_or_none(job.strengths),
+        relatedExperiences=_dump_json_or_none(job.relatedExperiences),
+        gaps=_dump_json_or_none(job.gaps),
+        resumeHighlights=_dump_json_or_none(job.resumeHighlights),
+        strategyAdvice=_dump_json_or_none(job.strategyAdvice),
         matchDetails=json.dumps(
             [
                 requirement_match.model_dump(mode="json")
@@ -60,10 +65,16 @@ def _build_complete_callback_job_result(
     )
 
 
-def _dump_json_or_none(value: list[str]) -> str | None:
+def _dump_json_or_none(value: list) -> str | None:
     if not value:
         return None
-    return json.dumps(value, ensure_ascii=False)
+    return json.dumps(
+        [
+            item.model_dump(mode="json") if hasattr(item, "model_dump") else item
+            for item in value
+        ],
+        ensure_ascii=False,
+    )
 
 
 def build_fail_callback_payload(

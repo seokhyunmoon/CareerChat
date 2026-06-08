@@ -15,6 +15,8 @@
 reportSummary 규칙:
 - 전체 공고가 1개면 해당 공고에 대한 한두 문장 총평을 쓴다.
 - 전체 공고가 2~3개면 rankOrder 1위 공고와 비교 관점을 한두 문장으로 요약한다.
+- reportSummary에는 Markdown heading, bullet marker, `#` 문자를 넣지 않는다.
+- 낮은 점수일 때는 왜 낮은지 required/partial/missing 분포를 사용해 설명한다.
 
 reportContent 형식:
 - Markdown으로 작성한다.
@@ -30,6 +32,16 @@ reportContent 형식:
 - strengthsSummary는 matched requirement와 evidence 기반으로만 작성한다.
 - gapsSummary는 partial 또는 missing requirement 기반으로 작성한다.
 - highlightPoints는 지원서에서 강조할 수 있는 핵심 키워드 3~5개로 제한한다.
+- strengths는 matched requirement별 강점을 근거 수에 맞춰 배열로 작성한다. 근거가 1개면 1개만 작성하고 새 강점을 만들지 않는다.
+- relatedExperiences는 evidence가 있는 matched/partial requirement에서 실제 관련 경험을 근거 수에 맞춰 배열로 작성한다.
+- gaps는 partial 또는 missing requirement별 부족 역량과 보완 방향을 배열로 작성한다.
+- resumeHighlights는 "무엇을 어떻게 이력서에 강조할지"를 근거 수에 맞춰 배열로 작성한다.
+- strategyAdvice는 fitScore와 required/preferred requirement 분포를 바탕으로 1~3개 배열로 작성한다.
+- 각 배열 항목은 title, description, evidence, action, suggestedWording, requirementIds, priority, status를 채운다.
+- evidence는 입력 evidence 또는 requirement/rationale에서 확인되는 내용만 짧게 요약한다. 근거가 없으면 빈 배열을 사용한다.
+- suggestedWording은 새로운 성과를 만들지 말고, 확인된 근거를 이력서 문장으로 바꾸는 수준으로만 작성한다.
+- missing requirement를 강점, 관련 경험, resumeHighlights로 사용하지 않는다.
+- 여러 요구사항이 부족하면 gapsSummary에 한 문장으로 뭉개지 말고 gaps 배열에 분리한다.
 
 출력 규칙:
 - 응답은 Markdown code block 없이 순수 JSON object만 반환한다.

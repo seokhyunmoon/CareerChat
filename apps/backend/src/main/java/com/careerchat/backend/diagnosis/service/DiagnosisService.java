@@ -163,6 +163,11 @@ public class DiagnosisService {
                     jobResult.strengthsSummary(),
                     jobResult.gapsSummary(),
                     jobResult.highlightPoints(),
+                    jobResult.strengths(),
+                    jobResult.relatedExperiences(),
+                    jobResult.gaps(),
+                    jobResult.resumeHighlights(),
+                    jobResult.strategyAdvice(),
                     jobResult.matchDetails()
             );
         }
