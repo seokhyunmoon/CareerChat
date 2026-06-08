@@ -14,3 +14,14 @@ export function getDiagnosis(diagnosisId) {
 export function getDiagnoses() {
   return apiRequest('/diagnoses');
 }
+
+export function getDiagnosisChatMessages(diagnosisId) {
+  return apiRequest(`/diagnoses/${diagnosisId}/chat/messages`);
+}
+
+export function createDiagnosisChatMessage(diagnosisId, content) {
+  return apiRequest(`/diagnoses/${diagnosisId}/chat/messages`, {
+    method: 'POST',
+    body: { content },
+  });
+}

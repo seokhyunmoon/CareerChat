@@ -1,6 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getDiagnosis } from '@/features/diagnosis/api/diagnosisApi';
+import {
+  createDiagnosisChatMessage,
+  getDiagnosis,
+  getDiagnosisChatMessages,
+} from '@/features/diagnosis/api/diagnosisApi';
 import AnalysisLoadingOverlay from '@/features/diagnosis/AnalysisLoadingOverlay';
 import {
   isPollingStatus,
@@ -9,6 +13,13 @@ import {
 } from '@/features/diagnosis/utils/diagnosisResultMapper';
 
 const POLLING_INTERVAL_MS = 3000;
+
+const INTRO_CHAT_MESSAGE = {
+  id: 'intro',
+  role: 'ai',
+  text: '분석 결과를 바탕으로 공고별 강점, 부족한 근거, 이력서 강조 방향을 설명해드릴게요.',
+  time: '방금 전',
+};
 
 const rankLabels = ['1st', '2nd', '3rd'];
 
@@ -40,6 +51,52 @@ function getBarClass(index) {
   if (index === 0) return 'b1';
   if (index === 1) return 'b2';
   return 'b3';
+}
+
+function toChatMessageViewModel(message) {
+  return {
+    id: message.messageId ? String(message.messageId) : `${message.role}-${message.createdAt}-${message.content}`,
+    role: message.role === 'USER' ? 'user' : 'ai',
+    text: message.content,
+    time: formatChatTime(message.createdAt),
+    evidenceData: message.evidenceData,
+  };
+}
+
+function formatChatTime(value) {
+  if (!value) {
+    return '방금 전';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '방금 전';
+  }
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
+function toChatErrorMessage(error) {
+  if (error?.code === 'AI_CHAT_RESPONSE_FAILED') {
+    return 'AI 답변을 생성하지 못했습니다. 잠시 후 다시 질문해 주세요.';
+  }
+
+  if (error?.code === 'DIAGNOSIS_NOT_COMPLETED') {
+    return '진단 결과가 준비된 뒤 질문할 수 있습니다.';
+  }
+
+  if (error?.code === 'UNAUTHORIZED') {
+    return '로그인이 만료되었습니다. 다시 로그인한 뒤 이용해 주세요.';
+  }
+
+  if (error?.status === 404 || error?.code === 'RESOURCE_NOT_FOUND') {
+    return '챗봇 대화를 불러올 진단 결과를 찾지 못했습니다.';
+  }
+
+  return '챗봇 메시지를 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 }
 
 function ResultStatusMessage({ title, description, actionLabel, onAction }) {
@@ -106,14 +163,12 @@ export default function Result() {
     [diagnosis?.jobs]
   );
   const [activeTab, setActiveTab] = useState(0);
-  const [chatMessages, setChatMessages] = useState([
-    {
-      role: 'ai',
-      text: '분석 결과를 바탕으로 공고별 강점, 부족한 근거, 이력서 강조 방향을 설명해드릴게요.',
-      time: '방금 전',
-    },
-  ]);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [isChatSending, setIsChatSending] = useState(false);
+  const [chatError, setChatError] = useState(null);
   const [inputValue, setInputValue] = useState('');
+  const chatMessagesRef = useRef(null);
 
   useEffect(() => {
     let isActive = true;
@@ -171,27 +226,80 @@ export default function Result() {
     };
   }, [diagnosisId]);
 
+  useEffect(() => {
+    if (diagnosis?.status !== 'COMPLETED' || !diagnosisId) {
+      setChatMessages([]);
+      setChatError(null);
+      setIsChatLoading(false);
+      setIsChatSending(false);
+      return undefined;
+    }
+
+    let isActive = true;
+
+    async function loadChatMessages() {
+      try {
+        setIsChatLoading(true);
+        setChatError(null);
+
+        const response = await getDiagnosisChatMessages(diagnosisId);
+        if (!isActive) return;
+
+        setChatMessages((response.messages ?? []).map(toChatMessageViewModel));
+      } catch (error) {
+        if (!isActive) return;
+        setChatError(toChatErrorMessage(error));
+      } finally {
+        if (isActive) {
+          setIsChatLoading(false);
+        }
+      }
+    }
+
+    loadChatMessages();
+
+    return () => {
+      isActive = false;
+    };
+  }, [diagnosis?.status, diagnosisId]);
+
+  useEffect(() => {
+    if (!chatMessagesRef.current) {
+      return;
+    }
+
+    chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
+  }, [chatMessages, isChatSending, chatError]);
+
   const safeActiveTab = activeTab < jobs.length ? activeTab : 0;
   const activeJob = jobs[safeActiveTab] ?? jobs[0];
-  const topJob = jobs[0];
+  const displayChatMessages = chatMessages.length > 0 ? chatMessages : [INTRO_CHAT_MESSAGE];
+  const canSendChat = diagnosis?.status === 'COMPLETED' && !isChatLoading && !isChatSending;
+  const showQuickQuestions = !isChatLoading && !isChatSending && chatMessages.length === 0;
 
-  const handleSendChat = (text) => {
+  const handleSendChat = async (text) => {
     const messageText = text || inputValue.trim();
-    if (!messageText || diagnosis?.status !== 'COMPLETED') return;
+    if (!messageText || diagnosis?.status !== 'COMPLETED' || isChatLoading || isChatSending) return;
 
-    const time = new Date().toLocaleTimeString('ko-KR', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-    setChatMessages((prev) => [...prev, { role: 'user', text: messageText, time }]);
-    setInputValue('');
+    try {
+      setIsChatSending(true);
+      setChatError(null);
 
-    setTimeout(() => {
-      const reply = topJob
-        ? `${topJob.companyName} ${topJob.position} 공고가 현재 1순위입니다. ${topJob.highlightPoints} 부족한 부분은 "${topJob.gapsSummary}"로 정리되어 있으니, 이 부분을 자기소개서와 포트폴리오에서 보완하는 전략이 좋습니다.`
-        : '완료된 분석 결과가 있을 때 공고별 지원 전략을 더 자세히 설명할 수 있습니다.';
-      setChatMessages((prev) => [...prev, { role: 'ai', text: reply, time }]);
-    }, 700);
+      const response = await createDiagnosisChatMessage(diagnosisId, messageText);
+      const nextMessages = [
+        response.userMessage,
+        response.assistantMessage,
+      ].filter(Boolean).map(toChatMessageViewModel);
+
+      setChatMessages((prev) => [...prev, ...nextMessages]);
+      if (!text) {
+        setInputValue('');
+      }
+    } catch (error) {
+      setChatError(toChatErrorMessage(error));
+    } finally {
+      setIsChatSending(false);
+    }
   };
 
   if (isInitialLoading) {
@@ -449,25 +557,39 @@ export default function Result() {
               <div className="chat-subtitle">결과 기반 Q&A</div>
             </div>
           </div>
-          <div className="chat-messages" id="chat-messages">
-            {chatMessages.map((msg) => (
-              <div key={`${msg.role}-${msg.time}-${msg.text}`} className={`msg msg-${msg.role}`}>
-                {msg.text}
-                <div className="msg-time">{msg.time}</div>
+          <div className="chat-messages" id="chat-messages" ref={chatMessagesRef}>
+            {isChatLoading ? (
+              <div className="chat-state">이전 대화를 불러오는 중입니다.</div>
+            ) : (
+              displayChatMessages.map((msg) => (
+                <div key={msg.id} className={`msg msg-${msg.role}`}>
+                  {msg.text}
+                  <div className="msg-time">{msg.time}</div>
+                </div>
+              ))
+            )}
+            {isChatSending && (
+              <div className="msg msg-ai msg-pending">
+                답변을 생성하고 있습니다.
+                <div className="msg-time">잠시만요</div>
               </div>
-            ))}
+            )}
+            {chatError && (
+              <div className="chat-feedback error">{chatError}</div>
+            )}
           </div>
-          <div className="chat-quick" style={{ display: chatMessages.length <= 1 ? 'flex' : 'none' }}>
-            <button className="quick-btn" onClick={() => handleSendChat('어떤 공고를 먼저 지원할까?')}>지원 순서 추천</button>
-            <button className="quick-btn" onClick={() => handleSendChat('강점을 어떻게 강조할까?')}>강점 강조 방법</button>
-            <button className="quick-btn" onClick={() => handleSendChat('부족한 점은 뭐야?')}>보완점 보기</button>
+          <div className="chat-quick" style={{ display: showQuickQuestions ? 'flex' : 'none' }}>
+            <button className="quick-btn" disabled={!canSendChat} onClick={() => handleSendChat('어떤 공고를 먼저 지원할까?')}>지원 순서 추천</button>
+            <button className="quick-btn" disabled={!canSendChat} onClick={() => handleSendChat('강점을 어떻게 강조할까?')}>강점 강조 방법</button>
+            <button className="quick-btn" disabled={!canSendChat} onClick={() => handleSendChat('부족한 점은 뭐야?')}>보완점 보기</button>
           </div>
           <div className="chat-input-wrap">
             <textarea
               className="chat-input"
-              placeholder="질문을 입력하세요..."
+              placeholder={isChatLoading ? '이전 대화를 불러오는 중...' : '질문을 입력하세요...'}
               rows="1"
               value={inputValue}
+              disabled={!canSendChat}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -476,7 +598,9 @@ export default function Result() {
                 }
               }}
             ></textarea>
-            <button className="chat-send" onClick={() => handleSendChat()}>↑</button>
+            <button className="chat-send" disabled={!canSendChat || !inputValue.trim()} onClick={() => handleSendChat()}>
+              ↑
+            </button>
           </div>
         </div>
       </div>
