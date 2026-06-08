@@ -1,7 +1,7 @@
 package com.careerchat.backend.diagnosis.controller;
 
 import com.careerchat.backend.diagnosis.dto.ChatMessageCreateRequest;
-import com.careerchat.backend.diagnosis.dto.ChatMessageResponse;
+import com.careerchat.backend.diagnosis.dto.ChatMessageCreateResponse;
 import com.careerchat.backend.diagnosis.dto.ChatMessagesResponse;
 import com.careerchat.backend.diagnosis.service.DiagnosisChatMessageService;
 import com.careerchat.backend.global.common.ApiResponse;
@@ -37,12 +37,12 @@ public class DiagnosisChatMessageController {
     }
 
     @PostMapping("/diagnoses/{diagnosisId}/chat/messages")
-    public ApiResponse<ChatMessageResponse> createUserMessage(
+    public ApiResponse<ChatMessageCreateResponse> createUserMessage(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @PathVariable Long diagnosisId,
             @Valid @RequestBody ChatMessageCreateRequest request
     ) {
-        ChatMessageResponse response = diagnosisChatMessageService.createUserMessage(
+        ChatMessageCreateResponse response = diagnosisChatMessageService.createUserMessage(
                 authenticatedUser.userId(),
                 diagnosisId,
                 request

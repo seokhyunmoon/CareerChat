@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.careerchat.backend.diagnosis.domain.ChatRole;
+import com.careerchat.backend.diagnosis.dto.ChatMessageCreateResponse;
 import com.careerchat.backend.diagnosis.dto.ChatMessageResponse;
 import com.careerchat.backend.diagnosis.dto.ChatMessagesResponse;
 import com.careerchat.backend.diagnosis.service.DiagnosisChatMessageService;
@@ -118,12 +119,21 @@ class DiagnosisChatMessageControllerTest {
         when(jwtTokenProvider.validateAccessToken("access-token")).thenReturn(true);
         when(jwtTokenProvider.getUserId("access-token")).thenReturn(1L);
         when(diagnosisChatMessageService.createUserMessage(eq(1L), eq(100L), any()))
-                .thenReturn(new ChatMessageResponse(
-                        1000L,
-                        ChatRole.USER,
-                        "강점을 더 자세히 알려줘",
-                        null,
-                        LocalDateTime.of(2026, 6, 8, 10, 0)
+                .thenReturn(new ChatMessageCreateResponse(
+                        new ChatMessageResponse(
+                                1000L,
+                                ChatRole.USER,
+                                "강점을 더 자세히 알려줘",
+                                null,
+                                LocalDateTime.of(2026, 6, 8, 10, 0)
+                        ),
+                        new ChatMessageResponse(
+                                1001L,
+                                ChatRole.ASSISTANT,
+                                "RAG 구성 요소 설계 경험을 중심으로 강조하면 좋습니다.",
+                                "{\"referencedJobIds\":[200],\"reasonCodes\":[\"STRENGTHS\"],\"usedFields\":[\"jobResults\"]}",
+                                LocalDateTime.of(2026, 6, 8, 10, 1)
+                        )
                 ));
 
         mockMvc.perform(post("/diagnoses/100/chat/messages")
@@ -136,9 +146,13 @@ class DiagnosisChatMessageControllerTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.messageId").value(1000))
-                .andExpect(jsonPath("$.data.role").value("USER"))
-                .andExpect(jsonPath("$.data.content").value("강점을 더 자세히 알려줘"))
+                .andExpect(jsonPath("$.data.userMessage.messageId").value(1000))
+                .andExpect(jsonPath("$.data.userMessage.role").value("USER"))
+                .andExpect(jsonPath("$.data.userMessage.content").value("강점을 더 자세히 알려줘"))
+                .andExpect(jsonPath("$.data.assistantMessage.messageId").value(1001))
+                .andExpect(jsonPath("$.data.assistantMessage.role").value("ASSISTANT"))
+                .andExpect(jsonPath("$.data.assistantMessage.content").value("RAG 구성 요소 설계 경험을 중심으로 강조하면 좋습니다."))
+                .andExpect(jsonPath("$.data.assistantMessage.evidenceData.referencedJobIds[0]").value(200))
                 .andExpect(jsonPath("$.message").value("Request succeeded."));
     }
 
@@ -183,5 +197,29 @@ class DiagnosisChatMessageControllerTest {
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.code").value("DIAGNOSIS_NOT_COMPLETED"))
                 .andExpect(jsonPath("$.message").value("Diagnosis result is not ready for chat."));
+    }
+
+    @Test
+    void createUserMessageReturnsServiceUnavailableWhenAiChatResponseFails() throws Exception {
+        when(jwtTokenProvider.validateAccessToken("access-token")).thenReturn(true);
+        when(jwtTokenProvider.getUserId("access-token")).thenReturn(1L);
+        when(diagnosisChatMessageService.createUserMessage(eq(1L), eq(100L), any()))
+                .thenThrow(new BusinessException(
+                        ErrorCode.AI_CHAT_RESPONSE_FAILED,
+                        "AI assistant response is temporarily unavailable."
+                ));
+
+        mockMvc.perform(post("/diagnoses/100/chat/messages")
+                        .header("Authorization", "Bearer access-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "content": "분석 결과를 알려줘"
+                                }
+                                """))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("AI_CHAT_RESPONSE_FAILED"))
+                .andExpect(jsonPath("$.message").value("AI assistant response is temporarily unavailable."));
     }
 }

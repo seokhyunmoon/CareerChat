@@ -3,26 +3,34 @@ package com.careerchat.backend.diagnosis.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.careerchat.backend.diagnosis.ai.dto.AiResultChatResponse;
+import com.careerchat.backend.diagnosis.ai.service.AiResultChatResponseRequester;
 import com.careerchat.backend.diagnosis.domain.ChatMessage;
 import com.careerchat.backend.diagnosis.domain.ChatRole;
 import com.careerchat.backend.diagnosis.domain.Diagnosis;
 import com.careerchat.backend.diagnosis.domain.DiagnosisStatus;
+import com.careerchat.backend.diagnosis.domain.JDResult;
 import com.careerchat.backend.diagnosis.dto.ChatMessageCreateRequest;
+import com.careerchat.backend.diagnosis.dto.ChatMessageCreateResponse;
 import com.careerchat.backend.diagnosis.dto.ChatMessageResponse;
 import com.careerchat.backend.diagnosis.dto.ChatMessagesResponse;
 import com.careerchat.backend.diagnosis.repository.ChatMessageRepository;
 import com.careerchat.backend.diagnosis.repository.DiagnosisRepository;
+import com.careerchat.backend.diagnosis.repository.JDResultRepository;
 import com.careerchat.backend.global.exception.BusinessException;
 import com.careerchat.backend.global.exception.ErrorCode;
 import com.careerchat.backend.profile.domain.ExperienceLevel;
 import com.careerchat.backend.profile.domain.Profile;
 import com.careerchat.backend.user.domain.User;
 import com.careerchat.backend.user.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -34,18 +42,25 @@ class DiagnosisChatMessageServiceTest {
 
     private UserRepository userRepository;
     private DiagnosisRepository diagnosisRepository;
+    private JDResultRepository jdResultRepository;
     private ChatMessageRepository chatMessageRepository;
+    private AiResultChatResponseRequester aiResultChatResponseRequester;
     private DiagnosisChatMessageService diagnosisChatMessageService;
 
     @BeforeEach
     void setUp() {
         userRepository = mock(UserRepository.class);
         diagnosisRepository = mock(DiagnosisRepository.class);
+        jdResultRepository = mock(JDResultRepository.class);
         chatMessageRepository = mock(ChatMessageRepository.class);
+        aiResultChatResponseRequester = mock(AiResultChatResponseRequester.class);
         diagnosisChatMessageService = new DiagnosisChatMessageService(
                 userRepository,
                 diagnosisRepository,
-                chatMessageRepository
+                jdResultRepository,
+                chatMessageRepository,
+                aiResultChatResponseRequester,
+                new ObjectMapper()
         );
     }
 
@@ -114,30 +129,103 @@ class DiagnosisChatMessageServiceTest {
     }
 
     @Test
-    void createUserMessageSavesUserMessageForCompletedDiagnosis() {
+    void createUserMessageSavesUserAndAssistantMessagesForCompletedDiagnosis() {
         User user = createUser(1L, "owner@example.com");
         Profile profile = createProfile(10L, user);
         Diagnosis diagnosis = createDiagnosis(100L, profile);
         diagnosis.complete("요약", "본문", LocalDateTime.of(2026, 6, 8, 10, 0));
+        JDResult jdResult = createJdResult(200L, diagnosis);
+        ChatMessage previousMessage = createMessage(
+                999L,
+                diagnosis,
+                ChatRole.ASSISTANT,
+                "이전 답변",
+                "{\"referencedJobIds\":[200]}"
+        );
         ChatMessageCreateRequest request = new ChatMessageCreateRequest("어떤 공고부터 지원할까?");
+        AiResultChatResponse aiResponse = new AiResultChatResponse(
+                "토스 공고를 먼저 추천합니다.",
+                new AiResultChatResponse.EvidenceData(
+                        List.of(200L),
+                        List.of("FIT_SCORE"),
+                        List.of("reportSummary", "jobResults")
+                ),
+                "groq",
+                "llama-3.1",
+                "result_chat_response",
+                "v1"
+        );
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(diagnosisRepository.findById(100L)).thenReturn(Optional.of(diagnosis));
+        when(chatMessageRepository.findAllByDiagnosisOrderByCreatedAtAscIdAsc(diagnosis))
+                .thenReturn(List.of(previousMessage));
+        when(jdResultRepository.findAllByDiagnosisOrderByDisplayOrderAsc(diagnosis))
+                .thenReturn(List.of(jdResult));
+        when(chatMessageRepository.save(any(ChatMessage.class))).thenAnswer(invocation -> {
+            ChatMessage chatMessage = invocation.getArgument(0);
+            long messageId = chatMessage.getRole() == ChatRole.USER ? 1000L : 1001L;
+            ReflectionTestUtils.setField(chatMessage, "id", messageId);
+            ReflectionTestUtils.setField(chatMessage, "createdAt", LocalDateTime.of(2026, 6, 8, 10, 5));
+            return chatMessage;
+        });
+        when(aiResultChatResponseRequester.request(eq(diagnosis), eq(List.of(jdResult)), any(), eq(List.of(previousMessage))))
+                .thenReturn(aiResponse);
+
+        ChatMessageCreateResponse response = diagnosisChatMessageService.createUserMessage(1L, 100L, request);
+
+        assertThat(response.userMessage().messageId()).isEqualTo(1000L);
+        assertThat(response.userMessage().role()).isEqualTo(ChatRole.USER);
+        assertThat(response.userMessage().content()).isEqualTo("어떤 공고부터 지원할까?");
+        assertThat(response.userMessage().evidenceData()).isNull();
+        assertThat(response.assistantMessage().messageId()).isEqualTo(1001L);
+        assertThat(response.assistantMessage().role()).isEqualTo(ChatRole.ASSISTANT);
+        assertThat(response.assistantMessage().content()).isEqualTo("토스 공고를 먼저 추천합니다.");
+        assertThat(response.assistantMessage().evidenceData())
+                .isEqualTo("{\"referencedJobIds\":[200],\"reasonCodes\":[\"FIT_SCORE\"],\"usedFields\":[\"reportSummary\",\"jobResults\"]}");
+        verify(aiResultChatResponseRequester).request(
+                eq(diagnosis),
+                eq(List.of(jdResult)),
+                any(ChatMessage.class),
+                eq(List.of(previousMessage))
+        );
+        verify(chatMessageRepository, times(2)).save(any(ChatMessage.class));
+    }
+
+    @Test
+    void createUserMessageThrowsSafeErrorWhenAiChatResponseFails() {
+        User user = createUser(1L, "owner@example.com");
+        Profile profile = createProfile(10L, user);
+        Diagnosis diagnosis = createDiagnosis(100L, profile);
+        diagnosis.complete("요약", "본문", LocalDateTime.of(2026, 6, 8, 10, 0));
+        JDResult jdResult = createJdResult(200L, diagnosis);
+        ChatMessageCreateRequest request = new ChatMessageCreateRequest("강점을 알려줘");
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(diagnosisRepository.findById(100L)).thenReturn(Optional.of(diagnosis));
+        when(chatMessageRepository.findAllByDiagnosisOrderByCreatedAtAscIdAsc(diagnosis))
+                .thenReturn(List.of());
+        when(jdResultRepository.findAllByDiagnosisOrderByDisplayOrderAsc(diagnosis))
+                .thenReturn(List.of(jdResult));
         when(chatMessageRepository.save(any(ChatMessage.class))).thenAnswer(invocation -> {
             ChatMessage chatMessage = invocation.getArgument(0);
             ReflectionTestUtils.setField(chatMessage, "id", 1000L);
             ReflectionTestUtils.setField(chatMessage, "createdAt", LocalDateTime.of(2026, 6, 8, 10, 5));
             return chatMessage;
         });
+        when(aiResultChatResponseRequester.request(eq(diagnosis), eq(List.of(jdResult)), any(), eq(List.of())))
+                .thenThrow(new BusinessException(
+                        ErrorCode.AI_CHAT_RESPONSE_FAILED,
+                        "AI assistant response is temporarily unavailable."
+                ));
 
-        ChatMessageResponse response = diagnosisChatMessageService.createUserMessage(1L, 100L, request);
+        assertThatThrownBy(() -> diagnosisChatMessageService.createUserMessage(1L, 100L, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("AI assistant response is temporarily unavailable.")
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.AI_CHAT_RESPONSE_FAILED);
 
-        assertThat(response.messageId()).isEqualTo(1000L);
-        assertThat(response.role()).isEqualTo(ChatRole.USER);
-        assertThat(response.content()).isEqualTo("어떤 공고부터 지원할까?");
-        assertThat(response.evidenceData()).isNull();
-        assertThat(response.createdAt()).isEqualTo(LocalDateTime.of(2026, 6, 8, 10, 5));
-        verify(chatMessageRepository).save(any(ChatMessage.class));
+        verify(chatMessageRepository, times(1)).save(any(ChatMessage.class));
     }
 
     @Test
@@ -216,6 +304,18 @@ class DiagnosisChatMessageServiceTest {
         Diagnosis diagnosis = new Diagnosis(profile);
         ReflectionTestUtils.setField(diagnosis, "id", id);
         return diagnosis;
+    }
+
+    private JDResult createJdResult(Long id, Diagnosis diagnosis) {
+        JDResult jdResult = new JDResult(
+                diagnosis,
+                "토스",
+                "AI Engineer",
+                "채용공고 본문",
+                1
+        );
+        ReflectionTestUtils.setField(jdResult, "id", id);
+        return jdResult;
     }
 
     private ChatMessage createMessage(
