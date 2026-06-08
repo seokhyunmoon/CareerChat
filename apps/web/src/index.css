@@ -1635,6 +1635,12 @@ section {
   border-color: rgba(248, 113, 113, .2);
 }
 
+.result-tag.caution {
+  background: rgba(253, 224, 71, .08);
+  color: var(--yellow);
+  border-color: rgba(253, 224, 71, .22);
+}
+
 .failed-hero {
   border-color: rgba(248, 113, 113, .24);
 }
@@ -1706,6 +1712,56 @@ section {
   font-size: 14px;
   line-height: 1.8;
   margin: 0;
+  white-space: pre-line;
+}
+
+.report-section-list {
+  display: grid;
+  gap: 12px;
+}
+
+.report-section {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.report-section:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.report-section-title {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.report-section ul {
+  color: var(--muted);
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.report-section li {
+  font-size: 13px;
+  line-height: 1.7;
+  padding-left: 14px;
+  position: relative;
+}
+
+.report-section li::before {
+  background: var(--green);
+  border-radius: 50%;
+  content: '';
+  height: 4px;
+  left: 0;
+  position: absolute;
+  top: .75em;
+  width: 4px;
 }
 
 /* ranking */
@@ -1767,6 +1823,11 @@ section {
   color: var(--muted);
 }
 
+.rank-badge.r-low {
+  background: rgba(248, 113, 113, .08);
+  color: var(--red);
+}
+
 .rank-info {
   flex: 1;
 }
@@ -1806,6 +1867,10 @@ section {
   color: var(--muted);
 }
 
+.rank-score.s-low {
+  color: var(--red);
+}
+
 .rank-bar-wrap {
   width: 80px;
   height: 3px;
@@ -1832,6 +1897,10 @@ section {
   background: var(--muted);
 }
 
+.rank-bar.b-low {
+  background: var(--red);
+}
+
 /* job detail tabs */
 .job-tabs {
   display: flex;
@@ -1843,7 +1912,11 @@ section {
 }
 
 .job-tab {
+  align-items: center;
+  display: flex;
   flex: 1;
+  gap: 7px;
+  justify-content: center;
   padding: 9px;
   text-align: center;
   font-size: 13px;
@@ -1855,6 +1928,25 @@ section {
   background: none;
   border: none;
   font-family: var(--sans);
+}
+
+.job-tab-dot {
+  background: var(--muted);
+  border-radius: 50%;
+  height: 7px;
+  width: 7px;
+}
+
+.job-tab-dot.s1 {
+  background: var(--green);
+}
+
+.job-tab-dot.s2 {
+  background: var(--yellow);
+}
+
+.job-tab-dot.s-low {
+  background: var(--red);
 }
 
 .job-tab.active {
@@ -1906,6 +1998,115 @@ section {
   text-transform: uppercase;
   margin-bottom: 12px;
   display: block;
+}
+
+.detail-section-heading {
+  align-items: center;
+  color: var(--text);
+  display: flex;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 8px;
+  margin: 24px 0 12px;
+}
+
+.detail-section-heading:first-child {
+  margin-top: 0;
+}
+
+.detail-section-heading svg {
+  color: var(--green);
+}
+
+.strategy-heading svg {
+  color: var(--yellow);
+}
+
+.structured-list {
+  display: grid;
+  gap: 10px;
+}
+
+.structured-item {
+  align-items: flex-start;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  gap: 12px;
+  padding: 15px;
+}
+
+.structured-item-icon {
+  align-items: center;
+  background: var(--green-dim);
+  border-radius: 6px;
+  color: var(--green);
+  display: flex;
+  flex: 0 0 30px;
+  height: 30px;
+  justify-content: center;
+}
+
+.structured-list.gap .structured-item-icon {
+  background: rgba(253, 224, 71, .08);
+  color: var(--yellow);
+}
+
+.structured-list.strategy .structured-item-icon {
+  background: rgba(253, 224, 71, .08);
+  color: var(--yellow);
+}
+
+.structured-item-content {
+  min-width: 0;
+}
+
+.structured-item-title {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+  margin-bottom: 5px;
+}
+
+.structured-item-description {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.structured-item-evidence,
+.structured-item-action,
+.structured-item-wording,
+.highlight-card-action,
+.highlight-card-wording {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  margin-top: 9px;
+}
+
+.structured-item-evidence span,
+.structured-item-action span,
+.structured-item-wording span,
+.highlight-card-action span,
+.highlight-card-wording span {
+  color: var(--green);
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  margin-bottom: 2px;
+}
+
+.structured-list.gap .structured-item-action span {
+  color: var(--yellow);
+}
+
+.structured-item-wording,
+.highlight-card-wording {
+  border-left: 2px solid var(--green);
+  padding-left: 10px;
 }
 
 .highlight-cards {
