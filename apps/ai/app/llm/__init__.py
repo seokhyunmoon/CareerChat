@@ -18,6 +18,7 @@ from app.llm.structured import (
     ReportGenerationOutput,
     ReportJobSummary,
     RequirementMatchDecision,
+    ResultChatResponseOutput,
     parse_structured_output,
     resolve_response_schema,
 )
@@ -35,6 +36,7 @@ __all__ = [
     "ReportGenerationOutput",
     "ReportJobSummary",
     "RequirementMatchDecision",
+    "ResultChatResponseOutput",
     "build_groq_llm_provider",
     "parse_structured_output",
     "resolve_response_schema",

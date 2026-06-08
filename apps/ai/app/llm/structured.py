@@ -73,10 +73,29 @@ class ReportGenerationOutput(BaseModel):
     jobs: list[ReportJobSummary] = Field(default_factory=list)
 
 
+class ResultChatResponseOutput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    content: str = Field(min_length=1)
+    referencedJobIds: list[int] = Field(default_factory=list)
+    reasonCodes: list[str] = Field(default_factory=list)
+    usedFields: list[str] = Field(default_factory=list)
+
+    @field_validator("referencedJobIds")
+    @classmethod
+    def validate_referenced_job_ids(cls, jd_ids: list[int]) -> list[int]:
+        if any(jd_id < 1 for jd_id in jd_ids):
+            raise ValueError("referencedJobIds must contain positive jdId values")
+        if len(jd_ids) != len(set(jd_ids)):
+            raise ValueError("referencedJobIds must not contain duplicates")
+        return jd_ids
+
+
 RESPONSE_SCHEMAS: dict[str, type[BaseModel]] = {
     "JobRequirementsOutput": JobRequirementsOutput,
     "RequirementMatchDecision": RequirementMatchDecision,
     "ReportGenerationOutput": ReportGenerationOutput,
+    "ResultChatResponseOutput": ResultChatResponseOutput,
 }
 
 
